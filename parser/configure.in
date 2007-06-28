@@ -1,5 +1,5 @@
 # Process this file with autoconf to produce a configure script.
-AC_REVISION($Id: configure.in,v 1.1 2007/01/19 09:16:45 xrehak Exp $)
+AC_REVISION($Id$)
 AC_PREREQ(2.59)
 AC_INIT(bnfparser2, 0.1.0, [bnfparser2-devel@lists.sourceforge.net])
 AC_CONFIG_SRCDIR([src/LalrTable.cpp])
