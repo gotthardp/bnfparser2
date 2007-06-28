@@ -1,0 +1,44 @@
+# Process this file with autoconf to produce a configure script.
+AC_REVISION($Id: configure.in,v 1.1 2007/01/19 09:16:45 xrehak Exp $)
+AC_PREREQ(2.59)
+AC_INIT(bnfparser2, 0.1.0, [bnfparser2-devel@lists.sourceforge.net])
+AC_CONFIG_SRCDIR([src/LalrTable.cpp])
+AC_CONFIG_HEADER([src/config.h])
+
+# Checks for programs.
+AC_PROG_CXX
+AC_PROG_CC
+AC_PROG_MAKE_SET
+
+AC_LANG(C++)
+
+# Checks for libraries.
+
+# Check for the pcrecpp library.
+AC_CACHE_CHECK([for pcrecpp library], [ac_have_pcrecpp],[
+    LIBS="-lpcrecpp $LIBS"
+    AC_LINK_IFELSE(AC_LANG_PROGRAM([
+        #include <pcrecpp.h>
+    ],[
+        pcrecpp::RE re("h.*o");
+        re.FullMatch("hello");
+    ]),[
+        ac_have_pcrecpp=yes
+    ],[
+        ac_have_pcrecpp=no
+        AC_MSG_ERROR([The pcrecpp library is required. Try 'http://www.pcre.org'.])
+    ])
+])
+
+# Checks for header files.
+
+# Checks for typedefs, structures, and compiler characteristics.
+AC_HEADER_STDBOOL
+AC_C_CONST
+AC_C_INLINE
+
+# Checks for library functions.
+AC_CHECK_FUNCS([strchr strtol])
+
+AC_CONFIG_FILES([Makefile src/Makefile specs/Makefile])
+AC_OUTPUT
