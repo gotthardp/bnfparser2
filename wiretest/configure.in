@@ -1,0 +1,42 @@
+# Process this file with autoconf to produce a configure script.
+AC_REVISION($Id$)
+AC_PREREQ(2.59)
+AC_INIT(wiretest, 0.1.0, [bnfparser2-devel@lists.sourceforge.net])
+AC_CONFIG_SRCDIR([src/wiretest.cpp])
+AC_CONFIG_HEADER([src/config.h])
+
+# Checks for programs.
+AC_PROG_CXX
+AC_PROG_CC
+AC_PROG_MAKE_SET
+
+AC_LANG(C++)
+
+test "x$prefix" = xNONE && prefix=$ac_default_prefix
+test "x$exec_prefix" = xNONE && exec_prefix='${prefix}'
+includedir=`eval echo $includedir`
+libdir=`eval echo $libdir`
+
+CPPFLAGS="$CPPFLAGS -I`eval echo $includedir`"
+LIBS="$LIBS -L`eval echo $libdir`"
+
+# Checks for libraries.
+AC_CHECK_LIB([pcap], [pcap_open_live], [],
+    AC_MSG_ERROR([The pcap library is required. Try 'http://www.tcpdump.org'.]))
+AC_CHECK_LIB([nids], [nids_register_tcp], [],
+    AC_MSG_ERROR([The nids library is required. Try 'http://libnids.sourceforge.net'.]
+    [Please configure libnids with '--enable-shared --disable-libnet --disable-libglib'.]))
+
+# Checks for header files.
+AC_HEADER_STDC
+AC_CHECK_HEADERS([arpa/inet.h netinet/in.h stdlib.h sys/ioctl.h sys/socket.h unistd.h])
+
+# Checks for typedefs, structures, and compiler characteristics.
+
+# Checks for library functions.
+AC_PROG_GCC_TRADITIONAL
+AC_FUNC_SELECT_ARGTYPES
+AC_CHECK_FUNCS([inet_ntoa select socket])
+
+AC_CONFIG_FILES([Makefile src/Makefile])
+AC_OUTPUT
