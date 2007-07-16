@@ -175,6 +175,10 @@ void LalrTable::compute_ext_nont_first(void)
     change = false;
     for(i = 0; i != m_rules.size(); i++)
     {
+      //not interested in epsilon-rules
+      if(m_rules[i].second.size() == 0)
+        break;
+        
       //if the token is a terminal symbol, stop processing the rule
       if((m_rules[i].second).is_terminal(0))
         break;
