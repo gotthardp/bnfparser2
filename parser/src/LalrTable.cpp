@@ -29,7 +29,7 @@
 
 void LalrTable::print_item(std::pair<int, int> item)
 {
-  char nonterm_names[] = {'X', 'S', 'L', 'R'};
+  char nonterm_names[] = {'X', 'C', 'A', 'B', 'S', 'D', 'E'};
   unsigned iter;
   std::cerr << nonterm_names[m_rules[item.first].first] << " -> ";
   for(iter = 0; iter < (m_rules[item.first].second).size(); iter++)

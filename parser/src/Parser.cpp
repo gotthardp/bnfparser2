@@ -307,6 +307,7 @@ void Parser::reducer(unsigned i, int a_i_plus_1)
   for(k = 0; k < chi.size(); k++)
   {
     reduce_string = chi[k].second;
+  
     state_to_go = m_table->get_go_to(m_gss.get_state_label(chi[k].first), 
                                      m_table->get_lhs(now_processed->rule_number) + 256);
                                      
@@ -360,6 +361,7 @@ void Parser::reducer(unsigned i, int a_i_plus_1)
         {
           successor_added = true;
           m_gss.add_semantics_to_symbol(symbol_with_label[l], reduce_string);
+          temp_symbol = symbol_with_label[l];
           break;
         }
       }
@@ -371,6 +373,7 @@ void Parser::reducer(unsigned i, int a_i_plus_1)
           {
             successor_added = true;
             m_gss.add_semantics_to_symbol(symbol_with_label[l], reduce_string);
+            temp_symbol = symbol_with_label[l];
             break;
           }
         }

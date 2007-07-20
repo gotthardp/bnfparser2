@@ -166,6 +166,12 @@ public:
     return which.level;
   }
 
+  //! Returns the label of the specified symbol node
+  int get_symbol_label(GSS::SymbolIdent which)
+  {
+    return m_symbol_nodes[which.id].symbol;
+  }
+
   //! Returns the vector of state nodes reachable from the from state node reducing by certain rule length
   std::vector<std::pair<GSS::StateIdent, std::string> > find_reachable(GSS::StateIdent from, unsigned length, GSS::SymbolIdent first_part);
 
