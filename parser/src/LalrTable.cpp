@@ -128,6 +128,10 @@ void LalrTable::compute_nont_first(void)
     {
       for(j = 0; j < (m_rules[i].second).size(); j++)
       {
+        //not interested in epsilon-rules
+        if(m_rules[i].second.size() == 0)
+          break;
+        
         //if the token is a terminal symbol, stop processing the rule
         if((m_rules[i].second).is_terminal(j))
           break;
@@ -385,7 +389,7 @@ void LalrTable::compute_lr0_items(void)
           //for all the rules
           for(unsigned m = 0; m < m_rules.size(); m++)
           {
-            if((m_rules[m].first) == *k)
+            if(((m_rules[m].first) == *k) && (m_rules[m].second.size() > 0))
               if((m_rules[m].second)[0] == h)
               {
                 member.insert(std::make_pair(m, 1));

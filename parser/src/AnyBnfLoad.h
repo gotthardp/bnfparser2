@@ -77,6 +77,9 @@ private:
   //!Contains the global number of the starting nonterminal.
   int m_start_nonterm_number;
   
+  //! Is set to true when the starting nonterminal is found
+  bool m_start_present;
+  
   //!Contains the name of the processed grammar file
   std::string m_current_grammar;
   
@@ -252,7 +255,7 @@ public:
 
   //!Constructor takes the verbose level.
   AnyBnfLoad(unsigned verbose = 0)
-  :m_verbose_level(verbose), nonterm_count(1)
+  :m_verbose_level(verbose), m_start_present(false), nonterm_count(1)
   {}
 
 };

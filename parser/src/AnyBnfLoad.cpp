@@ -1125,6 +1125,8 @@ void AnyBnfLoad::add_prefixes(void)
     m_start_nonterm_number = test_table[found_word].val();
     if(m_start_nonterm_number == -1)
       throw (std::runtime_error("File error - missing starting nonterminal"));
+    else
+      m_start_present = true;
   }
   
   //Here we look for the numbers of the nonterminals
@@ -1273,6 +1275,9 @@ void AnyBnfLoad::remove_unreachable (void)
   //the grammars are made
   std::vector<int> right_side;
 
+  if(!m_start_present)
+    throw (std::runtime_error("File error - missing starting nonterminal"));
+      
   //inserting starting nonterminal
   right_side.push_back(m_start_nonterm_number);
   m_global_table.insert(std::make_pair(0, right_side));
