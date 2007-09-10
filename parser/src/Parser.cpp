@@ -428,8 +428,8 @@ int main(void)
   Parser test_parser(0);  //0 = verbose level
 
   std::string word, res;
-  test_parser.load_global_conf("conf/global.gconf");
-  test_parser.add_grammar("conf/druha.gram", "conf/abnf.conf");
+  test_parser.set_start_nonterm("S", "test.gram")
+  test_parser.add_grammar("test.gram", "abnf.conf");
   test_parser.process();
   
   std::cout << "enter the word: "<< std::flush;

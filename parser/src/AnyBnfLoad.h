@@ -236,7 +236,7 @@ public:
   }
 
   //!Returns the number of the nonterminals
-  unsigned get_m_nonterm_count(void)
+  unsigned get_nonterm_count(void)
   {
     return m_nonterm_count;
   }

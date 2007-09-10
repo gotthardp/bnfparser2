@@ -97,10 +97,10 @@ public:
    */
   std::string parse_word(std::string word);
   
-  //! Loads the global grammar-configuration file
-  void load_global_conf(std::string filename)
+  //! Sets the name of the starting nonterminal and the name of the file containing it.
+  void set_start_nonterm(std::string start_name, std::string start_grammar_name)
   {
-    m_grammar.load_global(filename);
+    m_grammar.set_start_nonterm(start_name,start_grammar_name)
   }
 
   //! Loads a grammar-file together with its local conf file (mutliple calls possible)
