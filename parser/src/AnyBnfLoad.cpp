@@ -31,6 +31,8 @@
 //   Author: Petr Slovak and Vaclav Vacek 
 ///////////////
 
+
+#define _ANYBNFLOAD_TEST_
 #include <iostream>
 #include "AnyBnfLoad.h"
 
@@ -59,7 +61,6 @@ void AnyBnfLoad::remove_comments(void)
 
   std::string current;
   //current line fetched from the file
-// bool in_terminal_flag=false;
   bool get_line=true;
   bool comment_flag=false;
   int cur_pos=0;
@@ -110,14 +111,13 @@ void AnyBnfLoad::remove_comments(void)
         }
       }
 
-//      if (in_terminal_flag)
-//  i++;
+
       if (!(i%2))
       {
         comment_flag=true;
       }
       else
-        cur_pos=com_pos+2; //enit na size right comment
+        cur_pos=com_pos + m_config.get_base(10).size();
     }
     
     comment_flag=false;
@@ -139,14 +139,13 @@ void AnyBnfLoad::remove_comments(void)
           i++;
         }
       }
-//        if (in_terminal_flag)
-//      i++;
+
       if (!(i%2))
       {
         comment_flag=true;
       }
       else
-        cur_pos=lcom_pos+2; //zmenit na size right comment
+        cur_pos=lcom_pos + m_config.get_base(10).size();
     }
 
     // we need to find out, what is first on the line - 
@@ -162,7 +161,7 @@ void AnyBnfLoad::remove_comments(void)
     {
       if (int(com_pos)<int(lcom_pos))
       {
-        remove_line_comment(current,com_pos);
+        process_line_comment(current,com_pos);
         get_line=true; 
       }
       else
@@ -174,7 +173,7 @@ void AnyBnfLoad::remove_comments(void)
     {
       if (com_pos!=std::string::npos)
       {
-        remove_line_comment(current,com_pos);
+        process_line_comment(current,com_pos);
         get_line=true; 
       }
       else
@@ -200,19 +199,30 @@ std::vector<int> AnyBnfLoad::find_term_pos(std::string data)
     else
     {
       terminal_pos.push_back(found);
-      cur_pos=int(found)+1;   //m_config.get_base(2).size();
+      cur_pos=int(found) + m_config.get_base(2).size();
     }
   }
   return(terminal_pos);
 }
  
 
-void AnyBnfLoad::remove_line_comment(std::string line, int position)
+void AnyBnfLoad::process_line_comment(std::string line, int position)
 {
+  std::string comment;
+  pcrecpp::RE re_dep("!\\(\\s*\"([^\"]+)\"\\s*,\\s*\"([^\"]+)\"\\s*\\)"); 
+  dependency curr_dep;
   //take just the substring before line_comment symbol 
   //and insert it back into the file
+  comment = line.substr(position);
   line = line.substr(0,position);
   m_grammar.insert_line(line);
+  
+  if(re_dep.PartialMatch(comment, &(curr_dep.source_nonterm), &(curr_dep.dest_grammar)))
+  {
+    curr_dep.source_grammar = m_current_grammar;
+    curr_dep.dest_nonterm = curr_dep.source_nonterm;
+    m_dependencies.push_back(curr_dep);
+  } 
 }
 
 std::string AnyBnfLoad::remove_group_comment(std::string line, int position)
@@ -281,13 +291,17 @@ void AnyBnfLoad::condensate_rules(void)
   //initialization of patters used
   pcrecpp::RE re_blank("^(\\s)*");
   //blank line (just whitespace (==wsp))
-  pcrecpp::RE re_rule_wsp_def("^(\\s)*?"+m_config.get_base(0)+"(\\s)*"+m_config.get_base(1));
+  
+  pcrecpp::RE re_rule_wsp_def("^(\\s)*"+m_config.get_base(0)+"@?(\\s)*"+m_config.get_base(1));
   //line in format <wsp><rulename><wsp><defined><anything else>
+  
   pcrecpp::RE re_def(m_config.get_base(1)); 
   //is defined symbol on the line?
+  
   pcrecpp::RE re_wsp_def("^(\\s)*"+ (m_config.get_base(1)));  
   //line in format <wsp><defined><anything else>
-  pcrecpp::RE re_rule_wsp("^"+(m_config.get_base(0))+"(\\s)*");  
+  
+  pcrecpp::RE re_rule_wsp("^(\\s)*"+(m_config.get_base(0))+"@?(\\s)*");  
   //line in format <rulename><wsp>
 
 
@@ -304,39 +318,22 @@ void AnyBnfLoad::condensate_rules(void)
     std::cerr<<"ENTER Condensate"<<std::endl;
   //skip first blank lines
   while (re_blank.FullMatch(current))
-    {
-      if (m_grammar.end_of_file())
-      {
-       throw std::runtime_error("Condensate error 2");
-      }
-      if(m_verbose_level >= 2)
-        std::cerr<<"Blank skipped"<<std::endl;
-      current=m_grammar.get_line();
-    }
- 
-  if(m_verbose_level >= 2)
-    std::cerr<<"ENTER Condensate   "<<current<<std::endl;
-  //the first non_blank line has to start with <rulename>
-  std::string help="^"+ m_config.get_base(0);
-  if(m_verbose_level >= 2)
   {
-    std::cerr<<"^"+ m_config.get_base(0)<<"  help "<<help<<std::endl;
-    std::cerr <<current<<std::endl;
+    if (m_grammar.end_of_file())
+    {
+     throw std::runtime_error("Condensate error 2");
+    }
+    if(m_verbose_level >= 2)
+      std::cerr<<"Blank skipped"<<std::endl;
+    current=m_grammar.get_line();
   }
-//  if (!pcrecpp::RE("^"+ (m_config.get_base(0))).PartialMatch(current))
-  if (!pcrecpp::RE("^\\w+").PartialMatch(current))
-  { 
-    throw std::runtime_error("Condensate error 3");
-  }
-
-
+ 
   if(m_verbose_level >= 2)
     std::cerr<<"^^ENTER Condensate   "<<current<<std::endl;
   //after this if block, string in 'current' variable will have following format:
   //<rulename><?wsp><defined><?anything else>
   if (!re_rule_wsp_def.PartialMatch(current))
   {
-    
     //find first none blank line
     if (m_grammar.end_of_file())
     {
@@ -353,7 +350,8 @@ void AnyBnfLoad::condensate_rules(void)
         std::cerr<<"getting new line because of the previous being blank"<<std::endl;
       next=m_grammar.get_line();
     }
-    std::cerr<<next<<std::endl;
+    if(m_verbose_level >= 2)
+      std::cerr<<next<<std::endl;
 
     //it has to have the required format
     if (!re_wsp_def.PartialMatch(next))
@@ -525,62 +523,6 @@ void AnyBnfLoad::wipe_whitespace(void)
     m_grammar.insert_line(line);
   }
 }
-  
-/*
-//It will be never used propably
-void AnyBnfLoad::split_rules(void)
-{
-  unsigned position, start_pos;
-  int brackets;
-  std::string line, left;
-  while(!(m_grammar.end_of_file()))
-  {
-    line = m_grammar.get_line();
-    position = line.find(m_config.get_base(1));  //finds the definition symbol
-    left = line.substr(0, position);             //stores left side of the rule     
-    position += m_config.get_base(1).size();     //skips the symbol
-
-    brackets = 0;
-    start_pos = position;
-    while(position < line.size())
-    {
-      //left bracket
-      if(line.substr(position, m_config.get_base(7).size())==(m_config.get_base(7)))
-      {
-        position += m_config.get_base(7).size();
-        brackets++;
-      }
-
-      //right bracket
-      else if(line.substr(position, m_config.get_base(8).size())==(m_config.get_base(8)))  
-      {
-        position += m_config.get_base(8).size();
-        brackets--;
-      }
-
-      //alternative
-      else if((line.substr(position, m_config.get_base(6).size())==(m_config.get_base(6))) && (brackets==0))
-      {
-        m_grammar.insert_line(left + m_config.get_base(1) + line.substr(start_pos, position - start_pos));
-        position += m_config.get_base(6).size();
-        start_pos = position;
-
-      }
-   
-      else position++;
-      
-    }
-    
-    m_grammar.insert_line(left + m_config.get_base(1) + line.substr(start_pos, \
-    position - start_pos));
-
-    
-    
-  }
-
-}
-*/
-
 
 void AnyBnfLoad::transform_strings(void)
 {
@@ -635,36 +577,191 @@ void AnyBnfLoad::transform_strings(void)
     throw(std::runtime_error("File error"));
 }
 
-/*
-//It will be never used propably.
-void AnyBnfLoad::remove_brackets(void)
+void AnyBnfLoad::transform_names(void)
 {
+///////////////////////////////////////
   std::string line, rule, new_name;
   std::ostringstream stream_helper;
-  unsigned rulecounter = 0;
-  
-  pcrecpp::RE bracket_take(m_config.get_base_re(7) + "([^" + \
-      m_config.get_base_re(7) +  m_config.get_base_re(8)+"]*)" + \
-      m_config.get_base_re(8));
-  
+
+  //Removing %d50.60.70
+  //example %d50.60.70 -> %d50 %d60.70 -> %d50 %d60 %d70
+  pcrecpp::RE term_concat("%([bdx])([0-9A-F]+)\\.([0-9A-F]+)");
   while(!m_grammar.end_of_file())
   {
     line = m_grammar.get_line();
-    while(bracket_take.PartialMatch(line, &rule))
+    while(term_concat.Replace("%\\1\\2 %\\1\\3", &line))
+        ;
+    m_grammar.insert_line(line);
+  }
+  m_grammar.swap();
+
+  
+  //Removing %d50-70
+  pcrecpp::RE term_range("%([bdx])([0-9A-F]+)-([0-9A-F]+)");
+  std::string leftbound, rightbound;
+  long leftb, rightb;
+  int base;
+  char *err;
+  char bdx;
+  while(!m_grammar.end_of_file())
+  {
+    line = m_grammar.get_line();
+    while(term_range.PartialMatch(line, &bdx, &leftbound, &rightbound))
     {
-      stream_helper << "brack" << rulecounter++;
-      new_name = stream_helper.str();
-      bracket_take.Replace(new_name, &line);
-      m_grammar.insert_line(new_name +  " = " + rule);
+      stream_helper << m_config.get_base(7) << ' ';
+      switch(bdx)
+      {
+        case 'x':
+          base = 16;
+          break;
+        case 'b':
+          base = 2;
+          break;
+        case 'd':
+          base = 10;
+      }
+      leftb = strtol(leftbound.c_str(), &err, base);
+      rightb = strtol(rightbound.c_str(), &err, base);
+      for(int i = leftb; i <= rightb; i++)
+      {
+        stream_helper << "%d" << i << ' ';
+        if(i < rightb)
+           stream_helper << m_config.get_base(6);
+      }
+      stream_helper << m_config.get_base(8) << ' ';
+      term_range.Replace(stream_helper.str(),  &line);
       stream_helper.str("");
     }
     m_grammar.insert_line(line);
   }
-}     
-*/
+  m_grammar.swap();
+
+ 
+  //Removing %x and %b by transforming it into a decimal number
+  pcrecpp::RE term_binhex("%([bx])([0-9A-F]+)");
+  while(!m_grammar.end_of_file())
+  {
+    line = m_grammar.get_line();
+    while(term_binhex.PartialMatch(line, &bdx, &leftbound))
+    {
+      if(bdx == 'x')
+        base = 16;
+      else base = 2;
+      leftb = strtol(leftbound.c_str(), &err, base);
+      stream_helper << "%d" << leftb;
+      term_binhex.Replace(stream_helper.str(), &line);
+      stream_helper.str("");
+    }
+    m_grammar.insert_line(line);
+      
+  }
+  m_grammar.swap();
+////////////////////////////////////////
+
+
+  std::string current;
+  std::string found_word, found_word_lc;
+  std::string at_char;
+  //either terminal or nonterminal
+  pcrecpp::RE word("(%?" + m_config.get_base(0) + ")" + "(@?)");
+  pcrecpp::RE term("%d(\\d+)");
+  pcrecpp::RE concat(m_config.get_base(5));
+  pcrecpp::RE def(m_config.get_base_re(1));
+
+  pcrecpp::RE alternative(m_config.get_base(6));
+  
+  if(m_config.get_base(13) == "true")
+    m_grammar_case_sensitive[m_current_grammar] = true;
+    
+  while (!m_grammar.end_of_file())
+  {
+    current=m_grammar.get_line();
+    def.Replace(" ", &current);
+    concat.GlobalReplace(" ", &current);
+    alternative.GlobalReplace("\035", &current);
+    //we need a clean copy of the original line - 
+    //we can't make changes to the string the StringPiece points to
+    std::string current_h=current;
+    pcrecpp::StringPiece input(current_h);
+
+    //find tokens that meet the regulation for nonterminals and change them to
+    //numbers
+    while ((word.FindAndConsume(&input,&found_word, &at_char)))
+    {
+      if(found_word.at(0) == '%')
+        continue;
+      std::stringstream value;
+      if(m_verbose_level >= 2)
+        std::cerr<<"value of nontermcount => "<< m_nonterm_count <<std::endl;
+
+      found_word_lc = found_word;
+      if(m_config.get_base(13) != "true")
+      {
+          for(unsigned i = 0; i < found_word.size(); i++)
+          found_word_lc.at(i) = tolower(found_word_lc.at(i));
+      }
+
+      if(m_verbose_level >= 2)
+        std::cerr << found_word_lc << std::endl;
+      if (m_nonterm_names[m_current_grammar][found_word_lc].val()==-1)
+      {
+        //the found word is found for the first time
+        m_nonterm_names[m_current_grammar][found_word_lc].insert(m_nonterm_count);
+        m_nonterm_count++;
+      }
+      if(at_char == "") //normal non-terminal
+        value << '\036'
+              << m_nonterm_names[m_current_grammar][found_word_lc].val()
+              << '\037';
+      else   //marked non-terminal
+      {
+        value << '\036' 
+              << INT_MAX - m_nonterm_names[m_current_grammar][found_word_lc].val()
+              << '\037';
+        m_marked_names.insert(std::make_pair(m_nonterm_names[m_current_grammar][found_word_lc].val(),
+                              found_word_lc));
+      }
+      //replace the previously found occurence of the found word with the appropriate number on
+      //the current line
+      pcrecpp::RE(found_word + at_char).Replace(value.str(),&current);      
+    }
+    term.GlobalReplace("\036\034\\1\037", &current);
+    m_grammar.insert_line(current);
+  } 
+/*
+  //looking for the starting non-terminal
+  if(m_start_grammar == m_current_grammar)
+  {
+    found_word = m_start_nonterm;
+    if(m_config.get_base(13) != "true")
+      for(unsigned i = 0; i < found_word.size(); i++)
+        found_word.at(i) = tolower(found_word.at(i));
+    m_start_nonterm_number = test_table[found_word].val();
+    if(m_start_nonterm_number == -1)
+      throw (std::runtime_error("File error - missing starting nonterminal"));
+  }
+  
+  //Here we look for the numbers of the nonterminals
+  //used for connecting grammars and store it in m_dependencies 
+  //structure
+  for(unsigned i = 0; i < m_dependencies.size(); i++)
+  {
+    if(m_dependencies.at(i).source_grammar == m_current_grammar)
+    {
+      if(m_verbose_level >= 2)
+        std::cerr << "Got left side " << m_dependencies.at(i).nonterm << std::endl;
+      m_dependencies.at(i).source_num = test_table[m_dependencies.at(i).nonterm].val();
+    }
+    if(m_dependencies.at(i).dest_grammar == m_current_grammar)
+    {
+      if(m_verbose_level >= 2)
+        std::cerr << "Got right side " << m_dependencies.at(i).nonterm << std::endl;
+      m_dependencies.at(i).dest_num = test_table[m_dependencies.at(i).nonterm].val();
+    }
+  }*/
+}
 void AnyBnfLoad::to_abnf(void)
 {
-  //Will be modified
   std::string oper, pattern, definition;
   std::vector<pcrecpp::RE *> releft;
   pcrecpp::RE *construct;
@@ -672,10 +769,11 @@ void AnyBnfLoad::to_abnf(void)
   std::string::size_type position;
 
 //pcrecpp::RE special_chars("([\\?\\|\\.\\[\\]\\^\\$\\(\\)\\*\\+\\{\\}\\\\])");
-  pcrecpp::RE escaped_ids("\\\\[1-9]");
-  pcrecpp::RE escaped_nums("\\\\\\^[1-9]");
-  std::string non_brack_word("\\\\s*([^" + m_config.get_base_re(11, 2) + "]*)\\\\s*");
-
+  pcrecpp::RE escaped_seq("\\\\[1-9]");
+  pcrecpp::RE escaped_nums("\\\\n[1-9]");
+  pcrecpp::RE escaped_elem("\\\\e[1-9]");
+  std::string non_brack_word("(\\\\s*(\036[0-9\034]+\037\\\\s*)+)");
+  std::string single_element("\\\\s*(\036[0-9\034]+\037)\\\\s*");
   std::string numbers("\\\\s*([0-9]+)\\\\s*");
   
   for(int i = 0; i < m_config.get_ops_num(); i++)
@@ -708,7 +806,6 @@ void AnyBnfLoad::to_abnf(void)
       definition = definition.substr(0, position + 1);
     
     //regexp special chars must be backslashed
-    //Will be replaced with find and consume
     {   
         std::string source;
         source = pattern;
@@ -728,8 +825,9 @@ void AnyBnfLoad::to_abnf(void)
     }
     
     //Metachars \1 ... \n must be replaced by regexps.
-    escaped_ids.GlobalReplace(non_brack_word, &pattern);
+    escaped_seq.GlobalReplace(non_brack_word, &pattern);
     escaped_nums.GlobalReplace(numbers, &pattern);
+    escaped_elem.GlobalReplace(single_element, &pattern);
     if(m_verbose_level >= 2)
       std::cerr << pattern << "->" << definition << std::endl;
     construct = new pcrecpp::RE(pattern);
@@ -737,13 +835,12 @@ void AnyBnfLoad::to_abnf(void)
     right.push_back(definition);
   }
   construct = new pcrecpp::RE(m_config.get_base_re(7) + \
-      "\\s*([^" + m_config.get_base_re(11) + "]*)\\s*" + \
+      "(\\s*(\036[0-9\034]+\037\\s*)+)" + \
       m_config.get_base_re(8));
   releft.push_back(construct);
   right.push_back("\\1");
 
   std::string line, result;
-  int rulecounter = 0;
   unsigned priority;
   bool was_change;
   std::ostringstream stream_helper("");
@@ -756,12 +853,10 @@ void AnyBnfLoad::to_abnf(void)
     {
       if(releft.at(priority)->Extract(right.at(priority), line, &result))
       {
-        stream_helper << "toabnf" << rulecounter++ << ' ';
+        stream_helper << '\036' << m_nonterm_count++ << "\037 ";
         releft.at(priority)->Replace(stream_helper.str(), &line);
         priority = 0;
-        m_grammar.insert_line("\a" + stream_helper.str() + "= " + result);
-        if(m_verbose_level >= 2)
-          std::cerr << stream_helper.str() + "= " + result << std::endl;
+        m_grammar.insert_line("\a" + stream_helper.str() + result);
         stream_helper.str("");
       }
       else if(priority == right.size() - 1)
@@ -773,31 +868,22 @@ void AnyBnfLoad::to_abnf(void)
     if(m_verbose_level >= 2)
       std::cerr << line << std::endl;
   }
-  m_grammar.swap();
 
-  pcrecpp::RE def(m_config.get_base_re(1));
-  pcrecpp::RE con(m_config.get_base_re(5));
-  pcrecpp::RE alt(m_config.get_base_re(6));
+  m_grammar.swap();
+  
+  pcrecpp::RE term("%d(\\d+)");
+  pcrecpp::RE alt("/");
   while(!m_grammar.end_of_file())
   {
     line = m_grammar.get_line();
     if(line.at(0) == '\a')
     {
       line = line.substr(1);
-      alt.GlobalReplace("/", &line);
-      con.GlobalReplace(" ", &line);
+      term.GlobalReplace("\036\034\\1\037", &line);
+      alt.GlobalReplace("\035", &line);
     }
-    else
-    {
-      def.Replace("=", &line);
-      con.GlobalReplace(" ", &line);
-      alt.GlobalReplace("/", &line);
-    }
-    if(m_verbose_level >= 2)
-      std::cerr << line <<std::endl;
     m_grammar.insert_line(line);
   }
-
   //Freeing the dynamic memory
   for(unsigned i = 0; i < releft.size(); i++)
     delete releft.at(i);
@@ -808,9 +894,8 @@ void AnyBnfLoad::to_bnf(void)
 {
   std::string line, rule, new_name;
   std::ostringstream stream_helper;
-  int rulecounter = 0;
 
-  
+/*  
   //Removing %d50.60.70
   //example %d50.60.70 -> %d50 %d60.70 -> %d50 %d60 %d70
   pcrecpp::RE term_concat("%([bdx])([0-9A-F]+)\\.([0-9A-F]+)");
@@ -886,8 +971,7 @@ void AnyBnfLoad::to_bnf(void)
       
   }
   m_grammar.swap();
-
-
+*/
   //Transforming [] into 0*1()
   pcrecpp::RE optional("\\[([^\\[\\]]+)\\]");
   while(!m_grammar.end_of_file())
@@ -903,18 +987,17 @@ void AnyBnfLoad::to_bnf(void)
   //Removing all the brackets (now there are only round brackets)
   //The content of each bracket is moved to a new rule
   pcrecpp::RE bracket_take("\\(([^\\(\\)]*)\\)");
-  rulecounter = 0;
+
   while(!m_grammar.end_of_file())
   {
     line = m_grammar.get_line();
     while(bracket_take.PartialMatch(line, &rule))
     {
-      
-      stream_helper << "abrack" << rulecounter++;
+      stream_helper << '\036' << m_nonterm_count++ << '\037';
       new_name = stream_helper.str();
       bracket_take.Replace(' ' + new_name, &line);
       
-      m_grammar.insert_line(new_name +  " = " + rule);
+      m_grammar.insert_line(new_name + ' ' + rule);
       stream_helper.str("");
     }
     m_grammar.insert_line(line);
@@ -922,45 +1005,44 @@ void AnyBnfLoad::to_bnf(void)
   m_grammar.swap();
 
   //Transforming rules with *
-  pcrecpp::RE num_only("\\s+(\\d+)\\s*([a-zA-Z][a-zA-Z0-9\\-]*@?)");
-  pcrecpp::RE aster_only("\\s+\\*\\s*([a-zA-Z][a-zA-Z0-9\\-]*@?)");
-  pcrecpp::RE fixed_range("\\s+(\\d+)\\*(\\d+)\\s*([a-zA-Z][a-zA-Z0-9\\-]*@?)");
-  pcrecpp::RE at_most("\\s+\\*(\\d+)\\s*([a-zA-Z][a-zA-Z0-9\\-]*@?)");
-  pcrecpp::RE at_least("\\s+(\\d+)\\*\\s*([a-zA-Z][a-zA-Z0-9\\-]*@?)");
+  pcrecpp::RE num_only("\\s+(\\d+)\\s*(\036[0-9\034]+\037@?)");
+  pcrecpp::RE aster_only("\\s+\\*\\s*(\036[0-9\034]+\037@?)");
+  pcrecpp::RE fixed_range("\\s+(\\d+)\\*(\\d+)\\s*(\036[0-9\034]+\037@?)");
+  pcrecpp::RE at_most("\\s+\\*(\\d+)\\s*(\036[0-9\034]+\037@?)");
+  pcrecpp::RE at_least("\\s+(\\d+)\\*\\s*(\036[0-9\034]+\037@?)");
   int m, n;
-  rulecounter = 0;
+
   while(!m_grammar.end_of_file())
   {
     line = m_grammar.get_line();
-
     //Removing <n> <elem> - like rules
     while(num_only.PartialMatch(line, &n, &rule))
     {
-      stream_helper << "numonly" << rulecounter++;
+      stream_helper << '\036' << m_nonterm_count++ << '\037';
       new_name = stream_helper.str();
       num_only.Replace(' ' + new_name, &line);
       stream_helper.str("");
       for(int i = 0; i < n; i++)
         stream_helper << rule << ' ';
-      m_grammar.insert_line(new_name + " = " + stream_helper.str());
+      m_grammar.insert_line(new_name + ' ' + stream_helper.str());
       if(m_verbose_level >= 2)
-        std::cerr << new_name + " = " + stream_helper.str() <<std::endl;
+        std::cerr << new_name + ' ' + stream_helper.str() <<std::endl;
       stream_helper.str("");
     }
 
     //Removing *<elem> - like rules
     while(aster_only.PartialMatch(line, &rule))
     {
-      stream_helper << "astonly" << rulecounter++;
+      stream_helper << '\036' << m_nonterm_count++ << '\037';
       new_name = stream_helper.str();
       aster_only.Replace(' ' + new_name, &line);
       stream_helper.str("");
-      m_grammar.insert_line(new_name + " = ");
+      m_grammar.insert_line(new_name);
       if(m_verbose_level >= 2)
-        std::cerr << new_name << " = "<<std::endl;
-      m_grammar.insert_line(new_name + " = " + rule + ' ' + new_name);
+        std::cerr << new_name << ' '<<std::endl;
+      m_grammar.insert_line(new_name + ' ' + rule + ' ' + new_name);
       if(m_verbose_level >= 2)
-        std::cerr << new_name + " = " + rule + ' ' + new_name <<std::endl;
+        std::cerr << new_name + ' ' + rule + ' ' + new_name <<std::endl;
     }
 
     //Removing <n>*<m> <elem> - like rules
@@ -971,7 +1053,7 @@ void AnyBnfLoad::to_bnf(void)
         std::cerr << "VAROVANI: interval " << m << " - " << n << " je prazdny." << std::endl;
         std::cerr << line << std::endl;
       }
-      stream_helper << "range" << rulecounter++;
+      stream_helper << '\036' << m_nonterm_count++ << '\037';
       new_name = stream_helper.str();
       fixed_range.Replace(' ' + new_name, &line);
       stream_helper.str("");
@@ -979,9 +1061,9 @@ void AnyBnfLoad::to_bnf(void)
         stream_helper << rule << ' ';
       for(int i = m; i <= n ; i++)
       {
-        m_grammar.insert_line(new_name + " = " + stream_helper.str());
+        m_grammar.insert_line(new_name + ' ' + stream_helper.str());
         if(m_verbose_level >= 2)
-          std::cerr << new_name + " = " + stream_helper.str()<<std::endl;
+          std::cerr << new_name + ' ' + stream_helper.str()<<std::endl;
         stream_helper << rule << ' ';
       }
       stream_helper.str("");
@@ -990,15 +1072,15 @@ void AnyBnfLoad::to_bnf(void)
     //Removing *<m> <elem> - like rules
     while(at_most.PartialMatch(line, &m, &rule))
     {
-      stream_helper << "atmost" << rulecounter++;
+      stream_helper << '\036' << m_nonterm_count++ << '\037';
       new_name = stream_helper.str();
       at_most.Replace(' ' + new_name, &line);
       stream_helper.str("");
       for(int i = 0; i <= m ; i++)
       {
-        m_grammar.insert_line(new_name + " = " + stream_helper.str());
+        m_grammar.insert_line(new_name + ' ' + stream_helper.str());
         if(m_verbose_level >= 2)
-          std::cerr << new_name << " = " << stream_helper.str() << std::endl;
+          std::cerr << new_name << ' ' << stream_helper.str() << std::endl;
         stream_helper << rule << ' ';
       }
     }
@@ -1006,29 +1088,30 @@ void AnyBnfLoad::to_bnf(void)
     //Removing <m>* <elem> - like rules
     while(at_least.PartialMatch(line, &m, &rule))
     {
-      stream_helper << "atleast" << rulecounter;
+      stream_helper << '\036' << m_nonterm_count++ << '\037';
       new_name = stream_helper.str();
       at_least.Replace(' ' + new_name, &line);
       stream_helper.str("");
-      stream_helper << new_name << " = ";
+      stream_helper << new_name << ' ';
       for(int i = 0; i < m; i++)
         stream_helper << rule << ' ';
-      stream_helper << "iterator" << rulecounter;
+      stream_helper << '\036' << m_nonterm_count << '\037';
       m_grammar.insert_line(stream_helper.str());
       if(m_verbose_level >= 2)
         std::cerr << stream_helper.str() << std::endl;
       stream_helper.str("");
-      stream_helper << "iterator" << rulecounter << " = ";
+      stream_helper << '\036' << m_nonterm_count<< '\037' << ' ';
       m_grammar.insert_line(stream_helper.str());
       if(m_verbose_level >= 2)
         std::cerr << stream_helper.str() << std::endl;
-      stream_helper << rule << ' ' << "iterator" << rulecounter++;
+      stream_helper << rule << ' ' << '\036' << m_nonterm_count++ << '\037';
       m_grammar.insert_line(stream_helper.str());
       if(m_verbose_level >= 2)
         std::cerr << stream_helper.str() << std::endl;
       stream_helper.str("");
     }
     m_grammar.insert_line(line);
+    
     if(m_verbose_level >= 2)
       std::cerr << line <<std::endl;
   }
@@ -1040,15 +1123,15 @@ void AnyBnfLoad::to_bnf(void)
   while(!m_grammar.end_of_file())
   {
     line = m_grammar.get_line();
-    position = line.find("=") + 1;
+    position = line.find(" ") + 1;
     new_name = line.substr(0, position);
     line = line.substr(position);
-    position = line.find("/");
+    position = line.find("\035");
     while(position != std::string::npos)
     {
       rule = line.substr(0, position);
       line = line.substr(position + 1);
-      position = line.find("/");
+      position = line.find("\035");
       m_grammar.insert_line(new_name + rule);
       if(m_verbose_level >= 2)
         std::cerr << new_name + rule << std::endl;
@@ -1060,135 +1143,48 @@ void AnyBnfLoad::to_bnf(void)
     
 }
 
-void AnyBnfLoad::add_prefixes(void)
-{
-  std::string current;
-  std::string found_word, found_word_lc;
-  std::string at_char;
-  //either terminal or nonterminal
-  pcrecpp::RE word("(\\%?[a-zA-Z][a-zA-Z0-9\\-]*)(@?)"); 
-  while (!m_grammar.end_of_file())
-  {
-    current=m_grammar.get_line();
-    //we need a clean copy of the original line - 
-    //we can't make changes to the string the StringPiece points to
-    std::string current_h=current;
-    pcrecpp::StringPiece input(current_h);
 
-   //find tokens that meet the regulation for nonterminals and change them to
-   //numbers
-   while ((word.FindAndConsume(&input,&found_word, &at_char)))
-    {
-      //if the found word is a terminal, do nothing
-      if(found_word.at(0) == '%') continue;
-      std::stringstream value;
-      if(m_verbose_level >= 2)
-        std::cerr<<"value of nontermcount   =>"<<nonterm_count<<std::endl;
-
-      found_word_lc = found_word;
-      if(m_config.get_base(13) != "true")
-      {
-        for(unsigned i = 0; i < found_word.size(); i++)
-          found_word_lc.at(i) = tolower(found_word_lc.at(i));
-      }
-
-
-      if(m_verbose_level >= 2)
-        std::cerr << found_word_lc << std::endl;
-      if (test_table[found_word_lc].val()==-1)
-      {
-        //the found word is found for the first time
-        test_table[found_word_lc].insert(nonterm_count);
-        nonterm_count++;
-      }
-      if(at_char == "") //normal non-terminal
-        value<<test_table[found_word_lc].val();
-      else   //marked non-terminal
-      {
-        value<< INT_MAX - test_table[found_word_lc].val();
-        m_marked_names.insert(std::make_pair(test_table[found_word_lc].val(), found_word_lc));
-      }
-    //replace all occurences of the found word with the appropriate number on
-    //the current line
-      pcrecpp::RE(found_word + at_char).Replace(value.str(),&current);      
-    }
-    m_grammar.insert_line(current);
-  } 
-
-  //looking for the starting non-terminal
-  if(m_start_grammar == m_current_grammar)
-  {
-    found_word = m_start_nonterm;
-    if(m_config.get_base(13) != "true")
-      for(unsigned i = 0; i < found_word.size(); i++)
-        found_word.at(i) = tolower(found_word.at(i));
-    m_start_nonterm_number = test_table[found_word].val();
-    if(m_start_nonterm_number == -1)
-      throw (std::runtime_error("File error - missing starting nonterminal"));
-    else
-      m_start_present = true;
-  }
-  
-  //Here we look for the numbers of the nonterminals
-  //used for connecting grammars and store it in m_dependencies 
-  //structure
-  for(unsigned i = 0; i < m_dependencies.size(); i++)
-  {
-    if(m_dependencies.at(i).source_grammar == m_current_grammar)
-    {
-      if(m_verbose_level >= 2)
-        std::cerr << "Got left side " << m_dependencies.at(i).nonterm << std::endl;
-      m_dependencies.at(i).source_num = test_table[m_dependencies.at(i).nonterm].val();
-    }
-    if(m_dependencies.at(i).dest_grammar == m_current_grammar)
-    {
-      if(m_verbose_level >= 2)
-        std::cerr << "Got right side " << m_dependencies.at(i).nonterm << std::endl;
-      m_dependencies.at(i).dest_num = test_table[m_dependencies.at(i).nonterm].val();
-    }
-  }
-}
 
 void AnyBnfLoad::insert_into_table(void)
 {
   std::string current;
   std::string found_word;
   std::string at;
-  pcrecpp::RE word("(-?\\d+)");   
-  pcrecpp::RE number("(%d)");   
+  pcrecpp::RE word("\036(-?\\d+)\037");   
+  pcrecpp::RE number("\034");   
   while (!m_grammar.end_of_file())
   {
     current=m_grammar.get_line();
-   // change the %d for minus sign
+   // change the \034 for minus sign
    // ==> terminals have negative and nonterminals positive values
     number.GlobalReplace("-",&current);
     pcrecpp::StringPiece input(current);
 
-  bool first_flag=true;
-  int first;
-  std::vector<int> cur_rule;
-
-  while ((word.FindAndConsume(&input,&found_word)))
-  {
-    int value;
-    std::stringstream h_value(found_word);
-
-    //the first number is the nonterminal on the left side of the rule
-    if (first_flag)
-    {
-      h_value>>first;
-      first_flag=false;
-    }
-    else
-    {
-      h_value>>value;
-      cur_rule.push_back(value);
-    }
-  }
+    bool first_flag=true;
+    int first;
+    std::vector<int> cur_rule;
   
-  //insert into the global table
-  m_global_table.insert(std::make_pair(first,cur_rule));
-  m_grammar.insert_line(current);
+    while ((word.FindAndConsume(&input,&found_word)))
+    {
+      int value;
+      std::stringstream h_value(found_word);
+  
+      //the first number is the nonterminal on the left side of the rule
+      if (first_flag)
+      {
+        h_value>>first;
+        first_flag=false;
+      }
+      else
+      {
+        h_value>>value;
+        cur_rule.push_back(value);
+      }
+    }
+ 
+    //insert into the global table
+    m_global_table.insert(std::make_pair(first,cur_rule));
+    m_grammar.insert_line(current);
   } 
 }
 
@@ -1274,14 +1270,41 @@ void AnyBnfLoad::remove_unreachable (void)
   //Before removing the unusable nonterminals, connections among
   //the grammars are made
   std::vector<int> right_side;
+  
+  std::string start_lc;
+  
+  start_lc = m_start_nonterm;
+  
+  if(m_grammar_case_sensitive[m_start_grammar] == false)
+    for(unsigned i = 0; i < start_lc.size(); i++)
+      start_lc.at(i) = tolower(start_lc.at(i));
 
-  if(!m_start_present)
-    throw (std::runtime_error("File error - missing starting nonterminal"));
+  if(!m_start_set)
+    throw (std::runtime_error("File error - starting nonterminal not set"));
+    
+  if(m_nonterm_names[m_start_grammar][start_lc].val()==-1)
+    throw (std::runtime_error("File error - starting nonterminal not present"));
+  else
+     m_start_nonterm_number = m_nonterm_names[m_start_grammar][start_lc].val();
       
   //inserting starting nonterminal
   right_side.push_back(m_start_nonterm_number);
   m_global_table.insert(std::make_pair(0, right_side));
   right_side.clear();
+  
+  for(unsigned k = 0; k < m_dependencies.size(); k++)
+  {
+    if(m_grammar_case_sensitive[m_dependencies[k].source_grammar] == false)
+      for(unsigned i = 0; i < m_dependencies[k].source_nonterm.size(); i++)
+        m_dependencies[k].source_nonterm.at(i) = tolower(m_dependencies[k].source_nonterm.at(i));
+        
+    if(m_grammar_case_sensitive[m_dependencies[k].dest_grammar] == false)
+      for(unsigned i = 0; i < m_dependencies[k].dest_nonterm.size(); i++)
+        m_dependencies[k].dest_nonterm.at(i) = tolower(m_dependencies[k].dest_nonterm.at(i));
+        
+    m_dependencies[k].source_num = m_nonterm_names[m_dependencies[k].source_grammar][m_dependencies[k].source_nonterm].val();
+    m_dependencies[k].dest_num = m_nonterm_names[m_dependencies[k].dest_grammar][m_dependencies[k].dest_nonterm].val();
+  }
 
   
   for(unsigned k = 0; k < m_dependencies.size(); k++)
@@ -1329,7 +1352,7 @@ void AnyBnfLoad::remove_unreachable (void)
 
 
   //Now all the nonreachable rules are deleted
-  for (int i=0; i!=nonterm_count; i++)//going through all the non-terminals
+  for (int i=0; i!=m_nonterm_count; i++)//going through all the non-terminals
   {
     //if a nonterminal is reachable
     if (processed_nonterm.find(i)!=processed_nonterm.end())
@@ -1368,7 +1391,7 @@ void AnyBnfLoad::remove_unreachable (void)
 
 void AnyBnfLoad::add_grammar(std::string grammar, std::string config)
 {
-  test_table.clear();
+  std::string line_test;
   m_current_grammar = grammar;
   
   // load grammar file
@@ -1381,10 +1404,6 @@ void AnyBnfLoad::add_grammar(std::string grammar, std::string config)
     std::cerr<<"Loading configuration" <<std::endl;
   m_config.parse_conf(config);
 
-//  std::cerr << "Removing empty lines" <<std::endl;
-//  remove_empty();
-//  m_grammar.swap();
-  
   if(m_verbose_level >= 1)
     std::cerr<<"Removing comments"<<std::endl;
   remove_comments();
@@ -1399,26 +1418,52 @@ void AnyBnfLoad::add_grammar(std::string grammar, std::string config)
     std::cerr<<"Condensating rules"<<std::endl;
   condensate_rules();
   m_grammar.swap();
-
+  
   if(m_verbose_level >= 1)
     std::cerr << "Reducing whitespace" << std::endl;
   wipe_whitespace();
+  m_grammar.swap();
+  
+  if(m_verbose_level >= 1)
+    std::cerr<<"Nonterminals to numbers"<<std::endl;
+  transform_names();
+  m_grammar.swap();
+  
+  while(!m_grammar.end_of_file())
+  {
+    line_test = m_grammar.get_line();
+    std::cerr << line_test << std::endl;
+    m_grammar.insert_line(line_test);
+  }
   m_grammar.swap();
 
   if(m_verbose_level >= 1)
     std::cerr<<"Making ABNF"<<std::endl;
   to_abnf();
   m_grammar.swap();
+  
+  while(!m_grammar.end_of_file())
+  {
+    line_test = m_grammar.get_line();
+    std::cerr << line_test << std::endl;
+    m_grammar.insert_line(line_test);
+  }
+  m_grammar.swap();
 
   if(m_verbose_level >= 1)
     std::cerr<<"Making BNF"<<std::endl;
   to_bnf();
   m_grammar.swap();
-
-  if(m_verbose_level >= 1)
-    std::cerr<<"Nonterminals to numbers"<<std::endl;
-  add_prefixes();
+  
+  while(!m_grammar.end_of_file())
+  {
+    line_test = m_grammar.get_line();
+    std::cerr << line_test << std::endl;
+    m_grammar.insert_line(line_test);
+  }
   m_grammar.swap();
+
+
 
   if(m_verbose_level >= 1)
     std::cerr<<"Inserting into global table"<<std::endl;
@@ -1427,50 +1472,15 @@ void AnyBnfLoad::add_grammar(std::string grammar, std::string config)
   
 }
 
-//Reads the global configuration file
-void AnyBnfLoad::load_global(std::string cfg_name)
-{
-  bool first_line = true;
-  pcrecpp::RE start_line("\\(\\s*\"([^\"]+)\"\\s*,\\s*\"([^\"]+)\"\\s*\\)");
-  pcrecpp::RE   dep_line("\\(\\s*\"([^\"]+)\"\\s*,\\s*\"([^\"]+)\"\\s*,\\s*\"([^\"]+)\"\\s*\\)"); 
-  std::fstream file;
-  dependency curr_line;
-  char read_buffer[256];
-  file.open(cfg_name.c_str(), std::ios::in | std::ios::binary);
-  if(!file)
-    throw std::runtime_error("Global CFG error");
-  while(!file.eof())
-  {
-    file.getline(read_buffer, 256);
-    if(strlen(read_buffer) == 0) continue;
-    if(first_line)
-    {
-      first_line = false;
-      if(!start_line.FullMatch(read_buffer, &m_start_nonterm, &m_start_grammar))
-        throw(std::runtime_error("Global CFG error - bad format"));
-    }
-    else
-    {
-      if(!dep_line.FullMatch(read_buffer, &(curr_line.nonterm),\
-        &(curr_line.source_grammar), &(curr_line.dest_grammar)))
-      throw(std::runtime_error("Global CFG error - bad format"));
-      m_dependencies.push_back(curr_line);
-    }
-  }
-}
-
-
-
 #ifdef _ANYBNFLOAD_TEST_
 int main(void)
 {
-  AnyBnfLoad first_grammar;
+  AnyBnfLoad first_grammar(1);
   try
   {
-    std::cerr << ">>> Loading global config" <<std::endl;
-    first_grammar.load_global("conf/global.gconf");
-    std::cerr << ">>> Loading the SIP grammar" << std::endl;
+    std::cerr << ">>> Loading the grammar" << std::endl;
     first_grammar.add_grammar("conf/druha.gram", "conf/abnf.conf");
+    first_grammar.set_start_nonterm("<S>", "conf/druha.gram");
     std::cerr << "Grammars added, removing unreachable nonterminals"<<std::endl;
     first_grammar.remove_unreachable();
   }

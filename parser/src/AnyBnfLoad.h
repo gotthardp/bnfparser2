@@ -77,8 +77,8 @@ private:
   //!Contains the global number of the starting nonterminal.
   int m_start_nonterm_number;
   
-  //! Is set to true when the starting nonterminal is found
-  bool m_start_present;
+  //! Is set to true when the starting nonterminal is set
+  bool m_start_set;
   
   //!Contains the name of the processed grammar file
   std::string m_current_grammar;
@@ -92,7 +92,8 @@ private:
   class dependency
   {
   public:
-    std::string nonterm; //!<the name of the binded nonterminal
+    std::string source_nonterm; //!<the name of the binded nonterminal
+    std::string dest_nonterm; //!<the name of the nonterm in the pointed grammar
     std::string source_grammar;//!<the name of the source grammar
     std::string dest_grammar;  //!<the name of the destination grammar
     int source_num;   //!<the number of the nonterminal in the source grammar
@@ -114,12 +115,13 @@ private:
   };
 
   //!Maps names of nonterminals to numbers, is cleared for each grammar
-  std::map<std::string, count> test_table;
+  std::map<std::string, std::map<std::string, count> > m_nonterm_names;
+  std::map<std::string, bool> m_grammar_case_sensitive;
   
   std::map<int, std::string> m_marked_names;
 
   //!Counts nonterminals continuosly (is not reset to 0 after finishing one grammar).
-  int nonterm_count;
+  int m_nonterm_count;
 
   //!Stores the number of the rules.
   int m_rule_count;
@@ -140,10 +142,11 @@ private:
   //!Removes all the comments from the processed file.             
   void remove_comments(void);
 
-  //!Removes line comment of the specified position of the given string (// in C++ style)
-  /** The result is written directly to the file.
+  //!Processes a line comment starting at the specified position of the given string (// in C++ style)
+  /** The line without the comment is written directly to the file, if the comment
+   *  contains a dependency directive, it is stored.  
    */       
-  void remove_line_comment(std::string m_line, int m_position);
+  void process_line_comment(std::string m_line, int m_position);
   
   //!Removes group comment of the specified position of the given string
   /** It reads consequent lines until the end_of_comment symbol is found.
@@ -169,8 +172,6 @@ private:
 
   //!Reduces whitespace of any length to a single space. Must not be called before condensate_rules(). 
   void wipe_whitespace(void);       
-  //  void split_rules(void);           //1 line = 1 rule
-  //  void remove_brackets(void);       //removes brackets
 
   //!Transforms the grammar into ABNF. Must not be called before wipe_whitespace(). 
   void to_abnf(void);    
@@ -178,13 +179,12 @@ private:
   //!Transforms the ABNF grammar into BNF. Must not be called before to_abnf().         
   void to_bnf(void);
   
-  //!Transforms nonterminals to numbers. Must not be called before to_bnf(). 
+  //!Transforms nonterminals to numbers. Must be called before to_abnf(). 
   /** As each grammar file receives its own interval of numbers, the procedure
-   *  may be considered as namespacing as well. During this, the number of the
-   *  start nonterminal and the numbers in the #m_dependencies structure
-   *  are discovered
+   *  may be considered as namespacing as well. During this, the marked nonterminals
+   *  are recognised   
    */               
-  void add_prefixes(void);
+  void transform_names(void);
   
   //!Adds the grammar into the global table. Must not be called before add_prefixes(). 
   void insert_into_table(void);
@@ -212,13 +212,13 @@ public:
    */    
   void add_grammar(std::string grammar, std::string config);
   
-  //!Loads the global configuration file (containing information about the starting nonterminal and the dependencies).
-  /** It takes the name of the global configuration file and reads its contents.
-   *  The format of the file is:
-   *  <first line>("starting_nonterm_name", "file_with_the_grammar_containing_the_nonterm")
-   *  <following lines>("nonterm_name", "file_with_the_source_grammar", "file_with_the_destination_grammar")  
-   */   
-  void load_global(std::string cfg_name);
+  //!  Sets the name of the starting nonterminal and the name of the file containing it.
+  void set_start_nonterm(std::string start_name, std::string start_grammar_name)
+  {
+    m_start_set = true;
+    m_start_nonterm = start_name;
+    m_start_grammar = start_grammar_name;
+  }
   
   //! Returns entire grammar structure
   std::multimap<int, std::vector<int> > get_grammar(void)
@@ -236,9 +236,9 @@ public:
   }
 
   //!Returns the number of the nonterminals
-  unsigned get_nonterm_count(void)
+  unsigned get_m_nonterm_count(void)
   {
-    return nonterm_count;
+    return m_nonterm_count;
   }
 
   //! Returns the value of #m_verbose_level
@@ -255,7 +255,7 @@ public:
 
   //!Constructor takes the verbose level.
   AnyBnfLoad(unsigned verbose = 0)
-  :m_verbose_level(verbose), m_start_present(false), nonterm_count(1)
+  :m_verbose_level(verbose), m_start_set(false), m_nonterm_count(1)
   {}
 
 };

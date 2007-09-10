@@ -48,21 +48,29 @@ void AnyBnfFile::load_file(std::string name)
   m_file_loaded = false;
 
   m_input.open(name.c_str(), std::ios::in | std::ios::binary);
-  m_output.open("temp1", std::ios::out | std::ios::binary);
-
-  if(!m_input || !m_output)
-    throw std::runtime_error("File error");
+  if(!m_input)
+    throw std::runtime_error("Invalid input file");
+    
+  m_output.open(m_temp1.c_str(), std::ios::out | std::ios::binary);
+  if(!m_output)
+    throw std::runtime_error("Temporary file not created");
+  
+  m_temp1_created = true;
   
   m_output << m_input.rdbuf();    //copies entire file into temp1
   
   m_input.close();
   m_output.close();
 
-  m_input.open("temp1", std::ios::in);
-  m_output.open("temp2", std::ios::out);
-
-  if(!m_input || !m_output)
+  m_input.open(m_temp1.c_str(), std::ios::in);
+  if(!m_input)
     throw std::runtime_error("File error");
+
+  m_output.open(m_temp2.c_str(), std::ios::out);
+  if(!m_output)
+    throw std::runtime_error("Temporary file not created");
+  
+  m_temp2_created = true;
 
   m_filename = name;
   m_file_loaded = true;
@@ -117,13 +125,13 @@ void AnyBnfFile::swap(void)
     
   if(m_rw_state)
   {
-    m_input.open("temp1", std::ios::in);
-    m_output.open("temp2", std::ios::out);
+    m_input.open(m_temp1.c_str(), std::ios::in);
+    m_output.open(m_temp2.c_str(), std::ios::out);
   }
   else
   {
-    m_input.open("temp2", std::ios::in);
-    m_output.open("temp1", std::ios::out);
+    m_input.open(m_temp2.c_str(), std::ios::in);
+    m_output.open(m_temp1.c_str(), std::ios::out);
   }
   if(!m_input || !m_output)
     throw std::runtime_error("File error");
@@ -147,16 +155,16 @@ void AnyBnfFile::write_back(void)
 
 
   if(m_rw_state)
-    m_input.open("temp1", std::ios::in | std::ios::binary);
+    m_input.open(m_temp1.c_str(), std::ios::in | std::ios::binary);
   else
-    m_input.open("temp2", std::ios::in | std::ios::binary);
+    m_input.open(m_temp2.c_str(), std::ios::in | std::ios::binary);
 
   if(!m_input || !m_output)
     throw std::runtime_error("File error");
 
   m_output.open(m_filename.c_str(), std::ios::out | std::ios::binary);
   
-  m_output << m_input.rdbuf();    //copies entire file into temp1
+  m_output << m_input.rdbuf();    //copies entire file back into the source file
   
   m_input.close();
   m_output.close();
@@ -167,24 +175,27 @@ void AnyBnfFile::write_back(void)
 int main(void)
 {
   AnyBnfFile a;
-  char x;
+  std::string line;
+
   
-  try{
-  a.load_file("AnyBnfFile.txt");
-  }
-  catch(std::runtime_error)
+  try
   {
-    std::cerr << "The file cannot be opened." << std::endl;
-    std::cin >>x;
+    a.load_file("AnyBnfFile.txt");
+  }
+  catch(std::runtime_error e)
+  {
+    std::cerr << "Exception: " << e.what() << std::endl;
+    return 1;
   }
 
   while(!(a.end_of_file()))
   {
-    a.insert_line(a.get_line());
+    line = a.get_line();
+    a.insert_line(line);
+    std::cerr << line << std::endl;
   }
 
-  a.swap();
-  std::cin >> x;
+
   a.write_back();
   return 0;
 }

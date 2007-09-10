@@ -81,6 +81,7 @@ bool AnyBnfConf::check_operator(void)
 void AnyBnfConf::reset(void)
 {
   m_operators.clear();
+  m_operators_max = 0;
   leftcomment="";
   rightcomment="";
   alternative="";
@@ -110,7 +111,6 @@ bool AnyBnfConf::parse_conf(std::string conf_name)
   if(!m_conf_file)
   {
     throw std::runtime_error("File error - cannot be opened");
-    return(false);
   }
   else m_conf_loaded=true;
    
@@ -120,7 +120,6 @@ bool AnyBnfConf::parse_conf(std::string conf_name)
     if(m_conf_file.eof())  
     {
       throw std::runtime_error("File error - missing base lines");
-      return(false);
     }
     else
     {
@@ -153,7 +152,6 @@ bool AnyBnfConf::parse_conf(std::string conf_name)
   else
   {
     throw std::runtime_error("File error - missing OPERATORS word"); 
-    return(false);
   }
   while (!m_conf_file.eof())   
   {
@@ -223,7 +221,7 @@ std::string AnyBnfConf::get_base_re(int base_name, int doub)
 
 void AnyBnfConf::check_conf(void)
 {
-  m_output.open("temp1.txt", std::ios::out | std::ios::binary);
+  m_output.open("conf_test.txt", std::ios::out | std::ios::binary);
   for (int i=0; i<=10; i++)
   {
     switch(i)
@@ -259,9 +257,9 @@ void AnyBnfConf::check_conf(void)
 /*
 int main(void)
 {
-    AnyBnfConf Hello;
-    Hello.parse_conf("test.txt");
-    Hello.check_conf();
+    AnyBnfConf hello;
+    hello.parse_conf("test.txt");
+    hello.check_conf();
     return(0);
 }
 */

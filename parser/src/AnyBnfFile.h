@@ -45,6 +45,7 @@
 #include <fstream>
 #include <string>
 #include <stdexcept>
+#include <cstdio>
 
 //!  It's used for iterative text-file editing.
 /*  That means reading a line and inserting a set of lines
@@ -62,10 +63,18 @@ private:
   static const int m_max_line_length = 4096;   //!<max input-file line length
   bool m_rw_state;        //!<false = temp1 - read, temp2 - write; true = v. v.
   
+  std::string m_temp1; //!< The name of the first temporary file
+  std::string m_temp2; //!< The name of the second temporary file
+  
   //! false = something has been already written to the file; true = the first entry will be written
   bool m_first_entry;     
   std::string m_filename; //!<name of the source file
   bool m_file_loaded;     //!<true if a file is loaded
+  
+  bool m_temp1_created; //!<True if the first temporary file has been created
+  bool m_temp2_created; //!<True if the first temporary file has been created
+  
+
 
 public:
   //! prepares the specified file specified for using
@@ -118,8 +127,24 @@ public:
   void write_back(void);
 
   //!constructor with no parameters
-  AnyBnfFile(void):m_rw_state(false),m_first_entry(true),m_file_loaded(false){}
-  ~AnyBnfFile() {if(!m_file_loaded)return; m_input.close(); m_output.close();}
+  AnyBnfFile(void):m_rw_state(false),m_first_entry(true),m_file_loaded(false),
+  m_temp1_created(false), m_temp2_created(false)
+  {
+    m_temp1 = tmpnam(NULL);
+    m_temp2 = tmpnam(NULL);
+  }
+  ~AnyBnfFile()
+  {
+    if(m_file_loaded)
+    {
+      m_input.close();
+      m_output.close();
+    }
+    if(m_temp1_created)
+      remove(m_temp1.c_str());
+    if(m_temp2_created)
+      remove(m_temp2.c_str());
+  }
 };
 
 

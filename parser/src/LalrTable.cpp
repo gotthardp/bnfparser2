@@ -128,10 +128,7 @@ void LalrTable::compute_nont_first(void)
     {
       for(j = 0; j < (m_rules[i].second).size(); j++)
       {
-        //not interested in epsilon-rules
-        if(m_rules[i].second.size() == 0)
-          break;
-        
+     
         //if the token is a terminal symbol, stop processing the rule
         if((m_rules[i].second).is_terminal(j))
           break;
