@@ -66,7 +66,6 @@ int main(int argc, char  *argv[])
   std::string grammar;
   std::string metasyntax;
   std::string start;
-  std::string word;
   BnfParser2 test(debug_level);
 
   if(argc-optind < 3)
@@ -84,26 +83,35 @@ int main(int argc, char  *argv[])
   test.add_grammar(grammar, metasyntax);
   test.build_parser();
 
-  std::cerr << "Enter the word: " << std::flush;
-  while(std::cin >> word)
+  int errcount = 0;
+
+  while(!feof(stdin))
   {
-    word = word + "\r\n";  //temporary edit!!!!
-    word = "INVITE sip:bob@biloxi.com SIP/2.0\r\n\r\n";
+    std::string word;
+    // read new word
+    // note: words are separated by \0, program is terminated by EOF
+    int ch;
+    while((ch = fgetc(stdin)) > 0)
+      word += ch;
+
     if(test.parse_word(word))
     {
-      std::cout << "Word " << word << " accepted:"<< std::endl;
+      // print accepted word
       std::cout << test.get_semantic_string() << std::endl;
     }
     else
     {
-      std::cout << "Word " << word << " invalid - error at position " << test.get_error_position() + 1 << std::endl;
+      errcount++;
+      // locate the error
+      std::cout << "Syntax error at position " << test.get_error_position() + 1 << std::endl;
       std::cout <<word << std::endl;
       for(unsigned j = 0; j < test.get_error_position(); j++)
         std::cout << '-';
       std::cout  << '^' << std::endl;
     }
-    std::cerr << "Enter the word: " << std::flush;
   }
-  std::cout << std::endl;
-  return 0;
+
+  return errcount;
 }
+
+// end of file
