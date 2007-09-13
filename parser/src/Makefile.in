@@ -28,8 +28,8 @@ DEFS = @DEFS@
 CPPFLAGS = -ansi -Wall @CPPFLAGS@
 LIBS = @LIBS@
 
-TARGET = testparser
-TARGET_OBJS = LalrTable.o GSS.o Parser.o AnyBnfLoad.o AnyBnfConf.o AnyBnfFile.o
+TARGET = ../bnfcheck
+TARGET_OBJS = LalrTable.o GSS.o Parser.o AnyBnfLoad.o AnyBnfConf.o AnyBnfFile.o BnfParser2.o bnfcheck.o
 
 DEPENDENCY_FILES = *.cpp
 

@@ -31,8 +31,6 @@
 #include "LalrTable.h"
 
 
-#define PARSER_TEST
-
 /** \brief This class contains the implementation of the parser proper.
  *  
  *
@@ -91,26 +89,25 @@ public:
     friend bool operator<(const RMember & first, const RMember & second);
   };
 
-  //! The parsing function. It takes a word and returns its (selective) syntax tree.
-  /** \warning Must not be called before load_grammar().
-   *  \warning It only returns "true" or "false" instead of the syntax tree now.
+  //! The parsing function. It takes a word and returns true iff it is accepted.
+  /** \warning Must not be called before build_parser().
    */
-  std::string parse_word(std::string word);
+  bool parse_word(std::string word);
   
   //! Sets the name of the starting nonterminal and the name of the file containing it.
   void set_start_nonterm(std::string start_name, std::string start_grammar_name)
   {
-    m_grammar.set_start_nonterm(start_name,start_grammar_name)
+    m_grammar.set_start_nonterm(start_name,start_grammar_name);
   }
 
-  //! Loads a grammar-file together with its local conf file (mutliple calls possible)
+  //! Loads a grammar-file together with its configuration file (mutliple calls possible)
   void add_grammar(std::string g_name, std::string c_name)
   {
     m_grammar.add_grammar(g_name, c_name);
   }
 
-  //! Processes the grammar files added, computes GLALR table.
-  void process(void)
+  //! Processes the set of grammar files added, computes GLALR table.
+  void build_parser(void)
   {
     m_grammar.remove_unreachable();
     process_grammar(m_grammar.get_grammar(), m_grammar.get_nonterm_count());
@@ -132,9 +129,40 @@ public:
     m_verbose_level = vl;
   }
 
+  //! Returns the result of the last parsing.
+  bool get_parsing_result(void)
+  {
+    return m_last_accepted;
+  }
+
+  //! Returns the position of an error occuring during the last parsing.
+  /** When the last parsing is successful, the return value is not defined.
+   */
+  unsigned get_error_position(void)
+  {
+    return m_error_position;
+  }
+
+  //! Returns the semantic string of the last parsing
+  /** When the last parsing is unsuccessful, the return value is not defined.
+   */
+  std::string get_semantic_string(void)
+  {
+    return m_semantic_string;
+  }
+
 
 
 private:
+  //! Stores the result of the last parsing. 
+   bool m_last_accepted;
+
+  //! Stores the position of an error occuring during the last parsing.
+   unsigned m_error_position;
+
+  //! Stores the semantic string of the last parsing.
+   std::string m_semantic_string;
+
   //! The amount of information written to std::cerr
   unsigned m_verbose_level;
    

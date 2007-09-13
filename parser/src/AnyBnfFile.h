@@ -45,7 +45,8 @@
 #include <fstream>
 #include <string>
 #include <stdexcept>
-#include <cstdio>
+
+#include <cstdlib>
 
 //!  It's used for iterative text-file editing.
 /*  That means reading a line and inserting a set of lines
@@ -63,6 +64,7 @@ private:
   static const int m_max_line_length = 4096;   //!<max input-file line length
   bool m_rw_state;        //!<false = temp1 - read, temp2 - write; true = v. v.
   
+  std::string m_temp_dir; //!< The unique name of the temporary directory
   std::string m_temp1; //!< The name of the first temporary file
   std::string m_temp2; //!< The name of the second temporary file
   
@@ -130,8 +132,13 @@ public:
   AnyBnfFile(void):m_rw_state(false),m_first_entry(true),m_file_loaded(false),
   m_temp1_created(false), m_temp2_created(false)
   {
-    m_temp1 = tmpnam(NULL);
-    m_temp2 = tmpnam(NULL);
+    char templ[] = P_tmpdir "/parser_XXXXXX";
+    if(mkdtemp(templ) == NULL)
+      throw std::runtime_error("Temporary directory not created");
+
+    m_temp_dir = templ;
+    m_temp1 = m_temp_dir + "/temp1";
+    m_temp2 = m_temp_dir + "/temp2";
   }
   ~AnyBnfFile()
   {
@@ -144,6 +151,7 @@ public:
       remove(m_temp1.c_str());
     if(m_temp2_created)
       remove(m_temp2.c_str());
+    rmdir(m_temp_dir.c_str());
   }
 };
 

@@ -29,15 +29,14 @@
 
 void LalrTable::print_item(std::pair<int, int> item)
 {
-  char nonterm_names[] = {'X', 'C', 'A', 'B', 'S', 'D', 'E'};
   unsigned iter;
-  std::cerr << nonterm_names[m_rules[item.first].first] << " -> ";
+  std::cerr << m_rules[item.first].first << " -> ";
   for(iter = 0; iter < (m_rules[item.first].second).size(); iter++)
   {
     if(item.second == static_cast<int>(iter))
       std::cerr << '.';
     if((m_rules[item.first].second).is_nonterminal(iter))
-      std::cerr << nonterm_names[(m_rules[item.first].second)[iter]] << ' ';
+      std::cerr << (m_rules[item.first].second)[iter] << ' ';
     else 
       std::cerr << static_cast<char>(-((m_rules[item.first].second)[iter])) << ' ';
   }
@@ -128,7 +127,6 @@ void LalrTable::compute_nont_first(void)
     {
       for(j = 0; j < (m_rules[i].second).size(); j++)
       {
-     
         //if the token is a terminal symbol, stop processing the rule
         if((m_rules[i].second).is_terminal(j))
           break;
@@ -178,11 +176,11 @@ void LalrTable::compute_ext_nont_first(void)
     {
       //not interested in epsilon-rules
       if(m_rules[i].second.size() == 0)
-        break;
+        continue;
         
       //if the token is a terminal symbol, stop processing the rule
       if((m_rules[i].second).is_terminal(0))
-        break;
+        continue;
       
       //if the rule looks like A -> By, first(y) is computed here
       help_set.clear();
@@ -210,7 +208,7 @@ void LalrTable::compute_ext_nont_first(void)
           k++)
       {
         //h points to the A's ext member with the first part identical with
-        //the k's one
+        //the B's one
         h = m_ext_nont_firsts[(m_rules[i].first)].find(k->first);
         
         //if there is not such member in the A's set, it is added
@@ -340,14 +338,25 @@ void LalrTable::compute_neps_first(void)
 
 void LalrTable::compute_lr0_items(void)
 {
-  std::set<std::pair<int, int> > member;
+  std::map<int, std::set<std::pair<int, int> > > members;
+  std::map<int, std::set<std::pair<int, int> > >::iterator members_iter;
   unsigned state_count = 1, current_state = 0;
   std::set<std::pair<int, int> >::iterator l;
   std::set<int>::iterator k;
+
+
+  typedef std::multimap<int, marked_vector>::iterator MIT;
+  std::pair<MIT, MIT> range_iter;
+  MIT cycle_iter;
+
+
+  std::map<std::set<std::pair<int, int> >, unsigned>::iterator items_map_iter;
   
   //Here the initial rule is added
-  member.insert(std::make_pair(0, 0));
-  m_items.push_back(member);
+  std::set<std::pair<int, int> > help_set;
+  help_set.insert(std::make_pair(0, 0));
+  m_items.push_back(help_set);
+  m_items_map.insert(std::make_pair(help_set, 0));
   
   m_go_to.push_back(std::vector<int>(m_nonterm_count + 256, -1)); //-1 is the default value
   
@@ -359,82 +368,65 @@ void LalrTable::compute_lr0_items(void)
       std::cerr << "state_count:   "<< state_count << std::endl;
     }
   
-    for(int h = -255; h < static_cast<int>(m_nonterm_count); h++) //for each symbol
+    members.clear();
+    for(l = m_items[current_state].begin(); l != m_items[current_state].end(); l++)
+    //for each item from the kernel
     {
-      member.clear();
-      for(l = m_items[current_state].begin(); l != m_items[current_state].end(); l++)
-      //for each item from the kernel
-      {
-        //the dot cannot be on the right end of the rule
-        if(static_cast<int>(((m_rules[(*l).first]).second).size()) > (*l).second)
-        //if the rule from the l item has nonterm h on the l item's dot position..
-        if(((m_rules[(*l).first]).second)[(*l).second] == h)
-        {
-          member.insert(std::make_pair((*l).first, (*l).second + 1));
-          if(m_verbose_level >= 2)
-            std::cerr << "INSERT: " << (*l).first << " - " << (*l).second + 1 << std::endl;
-        }
-        //for all the nonterms Q such that A -> x.Cy is in the current state and C ->* Q
-        //dot cannot be in the last position
-        if(static_cast<int>(((m_rules[(*l).first]).second).size()) > (*l).second)
-         if(((m_rules[(*l).first]).second).is_nonterminal((*l).second))//if the dot is before a nonterm
+      //the dot cannot be on the right end of the rule
+      if(static_cast<int>(((m_rules[(*l).first]).second).size()) > (*l).second)
+      //If the item looks like A -> B.CD, item A -> BC.D is added to members[C]
+      members[((m_rules[(*l).first]).second)[(*l).second]].insert(std::make_pair((*l).first, (*l).second + 1));
+
+      //for all the nonterms Q such that A -> x.Cy is in the current state and C ->* Q
+      //dot cannot be in the last position
+      if(static_cast<int>(((m_rules[(*l).first]).second).size()) > (*l).second)
+        if(((m_rules[(*l).first]).second).is_nonterminal((*l).second))//if the dot is before a nonterm
           for(k = m_nont_firsts[((m_rules[(*l).first]).second)[(*l).second]].begin();
             k != m_nont_firsts[((m_rules[(*l).first]).second)[(*l).second]].end();
             k++)
-        {
-  
-          //for all the rules
-          for(unsigned m = 0; m < m_rules.size(); m++)
           {
-            if(((m_rules[m].first) == *k) && (m_rules[m].second.size() > 0))
-              if((m_rules[m].second)[0] == h)
-              {
-                member.insert(std::make_pair(m, 1));
-                if(m_verbose_level >= 2)
-                  std::cerr << "2NSERT: " << m << " - " << 1 << std::endl; 
-              }
-          }
+
+          range_iter = m_rules_map.equal_range(*k);
+          for(cycle_iter = range_iter.first; cycle_iter != range_iter.second; cycle_iter++)
+            if(cycle_iter->second.size() > 1)  // last position of the rule is the number of the rule
+              members[cycle_iter->second.at(0)].insert(std::make_pair(
+                                           cycle_iter->second.at(cycle_iter->second.size() - 1), 1));
+
+
         }
       }
-      //"go_to(current_state, h)" now computed
-  
-      bool found = false;
-      if(member.empty())
-        continue;
-  
-      
-      for(unsigned m = 0; m < m_items.size(); m++)
+
+      for(members_iter = members.begin(); members_iter != members.end(); members_iter++)
       {
-        if(m_items[m] == member)
+        items_map_iter = m_items_map.find(members_iter->second);
+        if(items_map_iter != m_items_map.end())
         {
-          if(h < 0)
-            m_go_to[current_state][-h] = m; //0-255 - terminals
+          if(members_iter->first < 0)
+            m_go_to[current_state][- members_iter->first] = items_map_iter->second; //0-255 - terminals
           else
-            m_go_to[current_state][h + 256] = m; //255+ - nonterminals
+            m_go_to[current_state][members_iter->first + 256] = items_map_iter->second; //255+ - nonterminals
           if(m_verbose_level >= 2)
-            std::cerr << "goto1(" << current_state<<", " << h << ") = " << m << std::endl;
-                 
-          found = true;
-          break;
+            std::cerr << "goto1(" << current_state<<", " << members_iter->first << ") = "
+                      << items_map_iter->second << std::endl;
+        }
+        else
+        {
+          if(m_verbose_level >= 2)
+            std::cerr << "goto2(" << current_state<<", " << members_iter->first << ") = " << state_count << std::endl;
+      
+          if(members_iter->first < 0)
+            m_go_to[current_state][- members_iter->first] = state_count; //0-255 - terminals
+          else
+            m_go_to[current_state][members_iter->first + 256] = state_count; //255+ - nonterminals
+
+          m_items.push_back(members_iter->second);
+          m_items_map.insert(std::make_pair(members_iter->second, state_count));
+
+          state_count++;
+          m_go_to.push_back(std::vector<int>(m_nonterm_count + 256, -1)); //-1 as the default value
         }
       }
-      
-      if(!found && !member.empty())
-      {
-        if(m_verbose_level >= 2)
-          std::cerr << "goto2(" << current_state<<", " << h << ") = " << state_count << std::endl;
-      
-        if(h < 0)
-            m_go_to[current_state][-h] = state_count; //0-255 - terminals
-          else
-            m_go_to[current_state][h + 256] = state_count; //255+ - nonterminals
-        state_count++;
-        
-        m_go_to.push_back(std::vector<int>(m_nonterm_count + 256, -1)); //-1 as the default value
-        m_items.push_back(member);
-      }
   
-    } //for each nonterminal
     current_state++;
   } 
 }
@@ -442,12 +434,23 @@ void LalrTable::compute_lr0_items(void)
 void LalrTable::compute_lookaheads()
 {
   int rulenumber, dotpos;
+  int dotsymbol;
+  unsigned rule_from_map;
   bool found;
   bool change;
-  std::vector<std::pair<std::pair<int, int>, std::set<int> > > closure;
+  std::map<std::pair<int, int>, std::set<int> > closure;
+  std::map<std::pair<int, int>, std::set<int> >::iterator processed_item;
+  std::map<std::pair<int, int>, std::set<int> >::iterator closure_iter;
   std::set<int> first_beta_a;
-  std::stack<int, std::list<int> > process_stack;
-  unsigned now_processed;
+  std::stack<std::map<std::pair<int, int>, std::set<int> >::iterator, \
+     std::list<std::map<std::pair<int, int>, std::set<int> >::iterator> > process_stack;
+
+  std::set<std::pair<int, int> > to_be_processed;
+
+
+  typedef std::multimap<int, marked_vector>::iterator MIT;
+  std::pair<MIT, MIT> range_iter;
+  MIT cycle_iter;
   
 ////////////////////////
   for(unsigned state = 0; state < m_ext_items.size(); state++)
@@ -465,23 +468,33 @@ void LalrTable::compute_lookaheads()
   
     //initialisation
     closure.clear();
-    process_stack.push(0);
+    to_be_processed.clear();
+
     first_beta_a.clear();
     first_beta_a.insert(cross_char);
-    closure.push_back(std::make_pair(std::make_pair(rulenumber, dotpos), first_beta_a));
+    processed_item = closure.insert(std::make_pair(std::make_pair(rulenumber, dotpos), first_beta_a)).first;
+    to_be_processed.insert(std::make_pair(rulenumber, dotpos));
+    process_stack.push(processed_item);
     first_beta_a.clear();
     
     
     while(!(process_stack.empty()))
     {
-      now_processed = process_stack.top();
+      processed_item = process_stack.top();
       process_stack.pop();
+
+      if(to_be_processed.find(std::make_pair(processed_item->first.first, processed_item->first.second)) 
+            == to_be_processed.end())
+        continue;
+       
+
+      to_be_processed.erase(std::make_pair(processed_item->first.first, processed_item->first.second));
   
       //computing "first(<beta>a)"
       first_beta_a.clear();
       first_beta_a.insert(epsilon); //starting with epsilon alone
-      for(unsigned x = closure[now_processed].first.second + 1;
-          x < ((m_rules[closure[now_processed].first.first]).second).size();
+      for(unsigned x = processed_item->first.second + 1;
+          x < ((m_rules[processed_item->first.first]).second).size();
           x++)
       {
         if(first_beta_a.find(epsilon) == first_beta_a.end())
@@ -489,22 +502,22 @@ void LalrTable::compute_lookaheads()
     
         first_beta_a.erase(epsilon);
     
-        if(((m_rules[closure[now_processed].first.first]).second).is_terminal(x))
+        if(((m_rules[processed_item->first.first]).second).is_terminal(x))
         {
-          first_beta_a.insert(((m_rules[closure[now_processed].first.first]).second)[x]);
+          first_beta_a.insert(((m_rules[processed_item->first.first]).second)[x]);
           break;
         }
         
         for(std::set<int>::iterator
-              is = m_firsts[((m_rules[closure[now_processed].first.first]).second)[x]].begin();
-              is != m_firsts[((m_rules[closure[now_processed].first.first]).second)[x]].end();
+              is = m_firsts[((m_rules[processed_item->first.first]).second)[x]].begin();
+              is != m_firsts[((m_rules[processed_item->first.first]).second)[x]].end();
               is++)
           first_beta_a.insert(*is);
       }
       if(first_beta_a.find(epsilon) != first_beta_a.end())
         for(std::set<int>::iterator
-              is = closure[now_processed].second.begin();
-              is != closure[now_processed].second.end();
+              is = processed_item->second.begin();
+              is != processed_item->second.end();
               is++)
         first_beta_a.insert(*is);
     
@@ -512,71 +525,68 @@ void LalrTable::compute_lookaheads()
   
   
       //If the dot is not in the last position
-      if(static_cast<int>(((m_rules[closure[now_processed].first.first]).second).size()) >
-                            closure[now_processed].first.second)
-      //and if the dot is before a nonterm                  
-      if(((m_rules[closure[now_processed].first.first]).second).is_nonterminal\
-       (closure[now_processed].first.second))
+      if(static_cast<int>(((m_rules[processed_item->first.first]).second).size()) >
+                            processed_item->first.second)
+      //and if the dot is in front of a nonterm 
+      if(((m_rules[processed_item->first.first]).second).is_nonterminal\
+       (processed_item->first.second))
       {
-        for(unsigned x = 0; x < m_rules.size(); x++)
+        dotsymbol = ((m_rules[processed_item->first.first]).second)
+                                                [processed_item->first.second];
+
+        range_iter = m_rules_map.equal_range(dotsymbol);
+        for(cycle_iter = range_iter.first; cycle_iter != range_iter.second; cycle_iter++)
+       //looking for all the rules with the nonterm in front of the dot on the left side
         {
-          //looking for all the rules with the nonterm before the dot on the left side
-          if(m_rules[x].first == ((m_rules[closure[now_processed].first.first]).second)\
-             [closure[now_processed].first.second])
+          found = false;
+          rule_from_map = cycle_iter->second.at(cycle_iter->second.size() - 1);
+          closure_iter = closure.find(std::make_pair(rule_from_map, 0));
+
+          if(closure_iter != closure.end())
           {
-            found = false;
-            for(unsigned y = 0; y < closure.size(); y++)
+            change = false;
+            for(std::set<int>::iterator
+               is = first_beta_a.begin();
+               is != first_beta_a.end();
+               is++)
             {
-              //if the processed item is already in the closure, only the lookaheads are added
-              if((static_cast<unsigned>(closure[y].first.first) == x) &&
-                (closure[y].first.second == 0))
-                 //0 is present here because only nonkernel items can be got by the closure operation
+              if(closure_iter->second.find(*is) == closure_iter->second.end())
               {
-                found = true;
-  
-                change = false;
-                for(std::set<int>::iterator
-                   is = first_beta_a.begin();
-                   is != first_beta_a.end();
-                   is++)
-                {
-                  if(closure[y].second.find(*is) == closure[y].second.end())
-                  {
-                    closure[y].second.insert(*is);
-                    change = true;
-                  }
-                }
-                if(change)  //if there was a change in an existing item's lookaheads
-                  process_stack.push(y);  //the item has to be processed again
-                break; //once the item is found, we do not have to continue
+                closure_iter->second.insert(*is);
+                change = true;
               }
             }
-            if(!found)
+            if(change)  //if there was a change in an existing item's lookaheads
             {
-              closure.push_back(std::make_pair(std::make_pair(x, 0), first_beta_a));
-              process_stack.push(closure.size() - 1); //setting the item just inserted to be processed
+              process_stack.push(closure_iter);  //the item has to be processed again
+              to_be_processed.insert(std::make_pair(rule_from_map, 0));
             }
-          
           }
+          else
+          {
+            closure_iter = closure.insert(std::make_pair(std::make_pair(rule_from_map, 0), first_beta_a)).first;
+            process_stack.push(closure_iter); //setting the item just inserted to be processed
+            to_be_processed.insert(std::make_pair(rule_from_map, 0));
+          } 
         }
       }
     }//while cycle
   
   ////LR(1) closure for one kernel item now computed
-  
+
   ////Here the spontaneous lookaheads/propagation of the lookaheads is computed
-    for(unsigned x = 0; x < closure.size(); x++)
+    for(closure_iter = closure.begin(); closure_iter != closure.end(); closure_iter++)
     {
       int symbol;
       int gotoitem_first, gotoitem_second;
       unsigned goto_index1, goto_index2;
-      if(static_cast<int>((m_rules[closure[x].first.first].second).size()) <= 
-          (closure[x].first.second)) continue;
+      if(static_cast<int>((m_rules[closure_iter->first.first].second).size()) <= 
+          (closure_iter->first.second)) continue;
       //not looking for the rules with the dot on the right end
   
-      gotoitem_first = closure[x].first.first;
-      gotoitem_second = closure[x].first.second + 1;
-      symbol = (m_rules[closure[x].first.first].second)[gotoitem_second - 1];
+      gotoitem_first = closure_iter->first.first;
+      gotoitem_second = closure_iter->first.second + 1;
+      symbol = (m_rules[closure_iter->first.first].second)[gotoitem_second - 1];
       
       goto_index1 = m_go_to[state][(symbol < 0)?-symbol:symbol + 256];
   
@@ -590,25 +600,20 @@ void LalrTable::compute_lookaheads()
   
   
       for(std::set<int>::iterator
-            is = closure[x].second.begin();
-            is != closure[x].second.end();
+            is = closure_iter->second.begin();
+            is != closure_iter->second.end();
             is++)
       {
         if((*is) != cross_char) m_ext_items[goto_index1][goto_index2].lookaheads.insert(*is);
         else m_ext_items[state][var2].propagate_to.insert(std::make_pair(goto_index1, goto_index2)); 
       }
-  
-       
-  
-      
     }
    }//all rules cycle
   }//all items cycle
-////////////////////////
-////finished computing spontaneous lookaheads/propagation
-
-//now propagating the lookaheads
-//The EOF lookahead is present in the 0, 0 item
+  ////////////////////////
+  ////finished computing spontaneous lookaheads/propagation
+  //now propagating the lookaheads
+  //The EOF lookahead is present in the 0, 0 item
   m_ext_items[0][0].lookaheads.insert(end_of_input);
   
   change = true;
@@ -653,10 +658,30 @@ void LalrTable::build_table(void)
   std::map<int, std::set<int> >::iterator m;
   
   for(i = 0; i < m_rules.size(); i++)
-    if(m_rules[i].second.size() == 0)
+  {
+    dot_in_the_end = true;
+    for(h = 0; h < m_rules[i].second.size(); h++)
+    {
+      if(m_rules[i].second.is_terminal(h))
+      {
+        dot_in_the_end = false;
+        break;
+      }
+      if(m_firsts[m_rules[i].second.at(h)].find(epsilon)
+         == m_firsts[m_rules[i].second.at(h)].end())
+      {
+        dot_in_the_end = false;
+        break;
+      }
+    }
+    
+    if(dot_in_the_end)
       epsilon_productions.push_back(i);
+
+  }
   
   //for each state
+
   for(i = 0; i < m_ext_items.size(); i++)
   {
     //256 chars + end_of_input
@@ -738,9 +763,8 @@ void LalrTable::build_table(void)
           {
             std::cerr << "State " << i << ", symbol "
              << static_cast<char>(- (*k))
-             << ", reduce by " << help_action.reduce_by << std::endl;
+             << ", reduce by " << help_action.reduce_by<<", length: " << help_action.reduce_length << std::endl;
           }
-          
         }
       }
     
@@ -822,11 +846,12 @@ bool operator<(const LalrTable::action& a1, const LalrTable::action& a2)
 {
   if(a1.what < a2.what)
     return true;
-  if(a1.next_state < a2.next_state)
+  if(a1.what == a2.what && a1.next_state < a2.next_state)
     return true;
-  if(a1.reduce_by < a2.reduce_by)
+  if(a1.what == a2.what && a1.next_state == a2.next_state && a1.reduce_by < a2.reduce_by)
     return true;
-  if(a1.reduce_length < a2.reduce_length)
+  if(a1.what == a2.what && a1.next_state == a2.next_state && a1.reduce_by == a2.reduce_by
+     && a1.reduce_length < a2.reduce_length)
     return true;
     
   return false;
@@ -886,7 +911,7 @@ void LalrTable::make_lalr_table(void)
   //freeing the previous structure
   m_items.clear();
   
-  if(m_verbose_level >= 2)
+  if(m_verbose_level >= 1)
     std::cerr << ">>>>COMPUTING lookaheads<<<<" << std::endl;
   compute_lookaheads();
   
@@ -918,11 +943,16 @@ void LalrTable::make_lalr_table(void)
 
 void LalrTable::load(std::multimap<int, std::vector<int> >& input)
 {
+  int rule_count = 0;
+  std::vector<int> rhs;
   std::multimap<int, std::vector<int> >::iterator i;
 
   for(i = input.begin(); i != input.end(); i++)
   {
     m_rules.push_back(*i);
+    rhs = i->second;
+    rhs.push_back(rule_count++);
+    m_rules_map.insert(std::make_pair(i->first, rhs));
   }
 }
 

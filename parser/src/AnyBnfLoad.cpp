@@ -32,7 +32,7 @@
 ///////////////
 
 
-#define _ANYBNFLOAD_TEST_
+//#define _ANYBNFLOAD_TEST_
 #include <iostream>
 #include "AnyBnfLoad.h"
 
@@ -586,11 +586,17 @@ void AnyBnfLoad::transform_names(void)
   //Removing %d50.60.70
   //example %d50.60.70 -> %d50 %d60.70 -> %d50 %d60 %d70
   pcrecpp::RE term_concat("%([bdx])([0-9A-F]+)\\.([0-9A-F]+)");
+  pcrecpp::RE term_in_progress("%([bdx])([0-9A-F]+)\024\\.([0-9A-F]+)");
+  pcrecpp::RE term_end("\024");
   while(!m_grammar.end_of_file())
   {
     line = m_grammar.get_line();
-    while(term_concat.Replace("%\\1\\2 %\\1\\3", &line))
+    while(term_concat.Replace(m_config.get_base(7) + "%\\1\\2 %\\1\\3\024", &line))
+    {
+      while(term_in_progress.Replace("%\\1\\2 %\\1\\3\024", &line))
         ;
+      term_end.Replace(m_config.get_base(8), &line);
+    }
     m_grammar.insert_line(line);
   }
   m_grammar.swap();
@@ -1429,42 +1435,16 @@ void AnyBnfLoad::add_grammar(std::string grammar, std::string config)
   transform_names();
   m_grammar.swap();
   
-  while(!m_grammar.end_of_file())
-  {
-    line_test = m_grammar.get_line();
-    std::cerr << line_test << std::endl;
-    m_grammar.insert_line(line_test);
-  }
-  m_grammar.swap();
-
   if(m_verbose_level >= 1)
     std::cerr<<"Making ABNF"<<std::endl;
   to_abnf();
   m_grammar.swap();
   
-  while(!m_grammar.end_of_file())
-  {
-    line_test = m_grammar.get_line();
-    std::cerr << line_test << std::endl;
-    m_grammar.insert_line(line_test);
-  }
-  m_grammar.swap();
-
   if(m_verbose_level >= 1)
     std::cerr<<"Making BNF"<<std::endl;
   to_bnf();
   m_grammar.swap();
   
-  while(!m_grammar.end_of_file())
-  {
-    line_test = m_grammar.get_line();
-    std::cerr << line_test << std::endl;
-    m_grammar.insert_line(line_test);
-  }
-  m_grammar.swap();
-
-
-
   if(m_verbose_level >= 1)
     std::cerr<<"Inserting into global table"<<std::endl;
   insert_into_table();

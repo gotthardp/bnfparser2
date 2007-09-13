@@ -94,7 +94,7 @@ std::vector<GSS::StateIdent> GSS::find_state(unsigned level, int label)
 
 bool operator<(const GSS::StateIdent & first, const GSS::StateIdent & second)
 {
-  return first.level < second.level || (first.level == second.level && first.id < second.id);
+  return (first.level < second.level) || (first.level == second.level && first.id < second.id);
 }
 
 bool operator<(const GSS::SymbolIdent & first, const GSS::SymbolIdent & second)

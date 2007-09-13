@@ -156,6 +156,12 @@ private:
    *  left side and the vector of the right side.
    */
   std::vector<std::pair<int, marked_vector> > m_rules;
+
+  //! This structure stores grammar rules, used for fast searching.
+  /** The number of the rule is stored in the last position of the
+   *  right side of the rule.
+   */
+  std::multimap<int, marked_vector> m_rules_map;
   
   
   
@@ -167,6 +173,12 @@ private:
    *  X -> ABCd is 8, the item is represented as (8, 2).   
    */
   std::vector<std::set<std::pair<int, int> > > m_items;
+
+  //! The structure stores the same information as #m_items, better for searching.
+  /** As the numeric identifier of each item (state) is needed, a map is used
+   *  in place of a set. The value is the identifier.
+   */
+  std::map<std::set<std::pair<int, int> >, unsigned> m_items_map;
   
   
   //! The structure used for storing go_to information for each state and grammar symbol
@@ -204,7 +216,7 @@ private:
   
   /** \brief the set of nonterminal symbols B such that A ->* B<anything> stored
    *         for each nonterminal A (->* is the rightmost derivation) together
-   *         with with the symbols that coud appear after B. 
+   *         with with the symbols that could appear after B. 
    *  
    *  If A ->* B<beta>, then m_ext_nont_firsts[A] contains the pair (B, S) and
    *  first(<beta>) is a subset of S.

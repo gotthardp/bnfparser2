@@ -22,6 +22,7 @@
 #include <stdexcept>
 #include <vector>
 #include <set>
+#include <climits>
 
 /** \brief This class contains the implementation of GSS (Graph Structured Stack)
  *
@@ -34,21 +35,25 @@ public:
   class StateIdent
   {
   public:
+    static const unsigned nothing = UINT_MAX;
     unsigned level; //!< The level the node is stored in
     unsigned id;  //!< The number the node has within the level
     StateIdent(unsigned _level, unsigned _id)
     :level(_level), id(_id){}
-    StateIdent(){}   
+    StateIdent()
+    :level(nothing), id(nothing){}   
   };
   
-  //!This class is used for identifying state nodes.
+  //!This class is used for identifying symbol nodes.
   class SymbolIdent
   {
   public:
+    static const unsigned nothing = UINT_MAX;
     unsigned id;  //!< The number of the symbol node
     SymbolIdent(unsigned _id)
     :id(_id){}
-    SymbolIdent(){}
+    SymbolIdent()
+    :id(nothing){}
   };
 
 

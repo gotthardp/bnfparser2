@@ -19,7 +19,7 @@
 
 #include "Parser.h"
 
-std::string Parser::parse_word(std::string word)
+bool Parser::parse_word(std::string word)
 {
   GSS::StateIdent initial_state;
   GSS::SymbolIdent not_an_ident;
@@ -38,11 +38,11 @@ std::string Parser::parse_word(std::string word)
   if(word.length() > 0)
     first_character = static_cast<int>(word[0]);
   else 
-    first_character = LalrTable::end_of_input;
+    first_character = -LalrTable::end_of_input;
 
 
   if(m_verbose_level >= 1)
-    std::cerr << "Parsing started" << std::endl;
+    std::cerr << "Parsing started " << std::endl;
   for(actions = m_table->get_actions(0, first_character).begin();
       actions != m_table->get_actions(0, first_character).end();
       actions++)
@@ -53,33 +53,52 @@ std::string Parser::parse_word(std::string word)
       m_r.insert(RMember(initial_state, actions->reduce_by, 0, not_an_ident));
   }
 
-  for(i = 0; i <= word.length(); i++)
+
+  for(i = 0; i <= word.size(); i++)
   {
-    if(i < word.length())
+    if(i < word.size())
       a_i_1 = -static_cast<int>(word[i]);
     else
       a_i_1 = LalrTable::end_of_input;
       
-    if(i < word.length() - 1)
+    if(i < word.size() - 1)
       a_i_2 = -static_cast<int>(word[i + 1]);
     else
       a_i_2 = LalrTable::end_of_input;
       
+    
     if(m_gss.state_level_empty(i))
       break;
 
     while(!m_r.empty())
       reducer(i, a_i_1);
 
-   if(i != word.length())
-      shifter(i, a_i_1, a_i_2);
+    if(i != word.size())
+      if(m_q.empty())
+      {
+        m_last_accepted = false;
+        m_error_position = i;
+        return false;
+      }
+      else
+        shifter(i, a_i_1, a_i_2);
   }
 
-  accepting_states = m_gss.find_state(word.length(), m_table->get_accepting_state());
+  accepting_states = m_gss.find_state(word.size(), m_table->get_accepting_state());
+
 
   if(accepting_states.size() > 0)
-    return m_gss.get_semantic_string(m_gss.get_state_successors(accepting_states[0])[0]);
-  else return "";
+  {
+    m_last_accepted = true;
+    m_semantic_string = m_gss.get_semantic_string(m_gss.get_state_successors(accepting_states[0])[0]);
+    return true;
+  }
+  else 
+  {
+    m_last_accepted = false;
+    m_error_position = i - 1;
+    return false;
+  }
 }
 
 void Parser::shifter(unsigned i, int a_i_plus_1, int a_i_plus_2)
@@ -101,7 +120,9 @@ void Parser::shifter(unsigned i, int a_i_plus_1, int a_i_plus_2)
   {
     if(m_verbose_level >= 2)
       std::cerr <<"(" << i <<  ") shift " << q_iter->new_state << std::endl;
+
     state_with_label = m_gss.find_state(i + 1, q_iter->new_state);
+
     if(!state_with_label.empty())
     {
       for(k = 0; k < state_with_label.size(); k++)  //always runs only once
@@ -119,6 +140,7 @@ void Parser::shifter(unsigned i, int a_i_plus_1, int a_i_plus_2)
               {
                 found_state_node = true;
                 m_gss.add_semantics_to_symbol(symbol_with_label[m], helper);
+                temp_symbol = symbol_with_label[m];
                 break;
               }
             if(found_state_node)
@@ -130,12 +152,13 @@ void Parser::shifter(unsigned i, int a_i_plus_1, int a_i_plus_2)
             {
               successors_of_symbol = m_gss.get_symbol_successors(symbol_with_label[m]);
               for(l = 0; l < successors_of_symbol.size(); l++)
-                if(m_gss.get_state_level(successors_of_symbol[l]) == i)
+                if(m_gss.get_state_level(successors_of_symbol[l]) == m_gss.get_state_level(q_iter->state_node))
                 {
                   found_state_node = true;
                   m_gss.add_successor_to_state(state_with_label[k], symbol_with_label[m]);
                   m_gss.add_successor_to_symbol(symbol_with_label[m], q_iter->state_node);
                   m_gss.add_semantics_to_symbol(symbol_with_label[m], helper);
+                  temp_symbol = symbol_with_label[m];
                   break;
                 }
               if(found_state_node)
@@ -152,13 +175,13 @@ void Parser::shifter(unsigned i, int a_i_plus_1, int a_i_plus_2)
       }
       
       
-        for(actions = m_table->get_actions(q_iter->new_state, -a_i_plus_2).begin();
+      for(actions = m_table->get_actions(q_iter->new_state, -a_i_plus_2).begin();
           actions != m_table->get_actions(q_iter->new_state, -a_i_plus_2).end();
           actions++)
-        {
-          if(actions->what == LalrTable::action::reduce && actions->reduce_length > 0)
-            m_r.insert(RMember(q_iter->state_node, actions->reduce_by, actions->reduce_length, temp_symbol));
-        }
+      {
+        if(actions->what == LalrTable::action::reduce && actions->reduce_length > 0)
+          m_r.insert(RMember(q_iter->state_node, actions->reduce_by, actions->reduce_length, temp_symbol));
+      }
 
     }
     else
@@ -215,8 +238,10 @@ void Parser::reducer(unsigned i, int a_i_plus_1)
 
   if(m_verbose_level >= 2)
   {
-    std::cerr<<"(" << i << ") reduce by " << now_processed->rule_number << std::endl;
-    std::cerr<<"  state: " << m_gss.get_state_label(now_processed->state_node)<<std::endl;
+    std::cerr<<"(" << i << ") reduce by " << now_processed->rule_number<<", length is " 
+        << now_processed->reduction_length << std::endl;
+    std::cerr<<"  state: " << m_gss.get_state_label(now_processed->state_node)
+             <<", level: " << m_gss.get_state_level(now_processed->state_node)<<std::endl;
   }
   
   if(now_processed->rule_number == 0)
@@ -238,10 +263,11 @@ void Parser::reducer(unsigned i, int a_i_plus_1)
   std::set<std::pair<GSS::StateIdent, std::string> >::iterator states_iter;
   
   std::string initial_value;
-  
-  initial_value = m_gss.get_semantic_string(now_processed->first_part);
-  
-  if(length > 0&& m_table->symbol_is_marked(now_processed->rule_number, length - 1))
+
+   if(length > 0)
+    initial_value = m_gss.get_semantic_string(now_processed->first_part);
+
+  if(length > 0 && m_table->symbol_is_marked(now_processed->rule_number, length - 1))
     initial_value = "<" + m_grammar.get_marked_name(m_table->get_symbol(now_processed->rule_number, length - 1)) + ">"
      + initial_value 
      + "</" + m_grammar.get_marked_name(m_table->get_symbol(now_processed->rule_number, length - 1)) + ">"; 
@@ -250,6 +276,7 @@ void Parser::reducer(unsigned i, int a_i_plus_1)
     if(m_table->symbol_is_marked(now_processed->rule_number, k))
       initial_value = initial_value + "<" + m_grammar.get_marked_name(m_table->get_symbol(now_processed->rule_number, k))+">"
                     +  "</"+ m_grammar.get_marked_name(m_table->get_symbol(now_processed->rule_number, k))+">";
+
   if(length > 0)
   {
     states.insert(std::make_pair(now_processed->state_node, initial_value));
@@ -302,21 +329,20 @@ void Parser::reducer(unsigned i, int a_i_plus_1)
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
   
-
-
   for(k = 0; k < chi.size(); k++)
   {
     reduce_string = chi[k].second;
-  
     state_to_go = m_table->get_go_to(m_gss.get_state_label(chi[k].first), 
                                      m_table->get_lhs(now_processed->rule_number) + 256);
+
+
                                      
     if(m_verbose_level >= 2)
     {
       std::cerr<<"label chi[k]: " << m_gss.get_state_label(chi[k].first) << std::endl;
       std::cerr<<"level chi[k]: " << m_gss.get_state_level(chi[k].first) << std::endl;
-      std::cerr<<"LHS           "<<m_table->get_lhs(now_processed->rule_number)<<std::endl;
-      std::cerr<<"GOTO          "<<state_to_go<< std::endl;
+      std::cerr<<"LHS           " << m_table->get_lhs(now_processed->rule_number)<<std::endl;
+      std::cerr<<"GOTO          " << state_to_go<< std::endl;
     }
          
     state_with_label = m_gss.find_state(i, state_to_go);
@@ -332,17 +358,18 @@ void Parser::reducer(unsigned i, int a_i_plus_1)
           actions++)
       {
         if(actions->what == LalrTable::action::shift)
+        {
           m_q.insert(QMember(temp_state, actions->next_state));
+        }
         else if(actions->reduce_length == 0)
           m_r.insert(RMember(temp_state, actions->reduce_by, 0, temp_symbol));
       }
     
-     // if(now_processed->reduction_length != 0)
+      if(now_processed->reduction_length != 0)
         for(actions = m_table->get_actions(state_to_go, -a_i_plus_1).begin();
             actions != m_table->get_actions(state_to_go, -a_i_plus_1).end();
             actions++)
         {
-          
           if(actions->what == LalrTable::action::reduce && actions->reduce_length > 0)
           {
             m_r.insert(RMember(chi[k].first, actions->reduce_by, actions->reduce_length, temp_symbol));
@@ -353,8 +380,8 @@ void Parser::reducer(unsigned i, int a_i_plus_1)
     {
       symbol_with_label = m_gss.get_state_successors_with_label(state_with_label[0],
                                  m_table->get_lhs(now_processed->rule_number));
-             
-      successor_added = false;                    
+
+      successor_added = false;
       for(l = 0; l < symbol_with_label.size(); l++)
       {
         if(m_gss.has_state_successor(symbol_with_label[l], chi[k].first))
@@ -373,6 +400,7 @@ void Parser::reducer(unsigned i, int a_i_plus_1)
           {
             successor_added = true;
             m_gss.add_semantics_to_symbol(symbol_with_label[l], reduce_string);
+            m_gss.add_successor_to_symbol(symbol_with_label[l], chi[k].first);
             temp_symbol = symbol_with_label[l];
             break;
           }
@@ -413,40 +441,20 @@ bool operator<(const Parser::QMember & first, const Parser::QMember & second)
 
 bool operator<(const Parser::RMember & first, const Parser::RMember & second)
 {
-  return (first.state_node < second.state_node)
-   || (first.state_node == second.state_node && first.rule_number < second.rule_number)
-   || (first.state_node == second.state_node && first.rule_number == second.rule_number
-        && first.reduction_length < second.reduction_length)
-   || (first.state_node == second.state_node && first.rule_number == second.rule_number
-        && first.reduction_length == second.reduction_length
-        && (first.first_part < second.first_part));
-}
+  if (first.state_node < second.state_node)
+    return true;
 
-#ifdef PARSER_TEST
-int main(void)
-{
-  Parser test_parser(0);  //0 = verbose level
-
-  std::string word, res;
-  test_parser.set_start_nonterm("S", "test.gram")
-  test_parser.add_grammar("test.gram", "abnf.conf");
-  test_parser.process();
+  if (first.state_node == second.state_node && first.rule_number < second.rule_number)
+    return true;
   
-  std::cout << "enter the word: "<< std::flush;
-  while(std::cin >> word)
-  {
-    res = test_parser.parse_word(word);
-    
-    std::cout << "++++++ RESULT ++++++" << std::endl;
-    if(res.size() > 0)
-      std::cout << res << std::endl;
-    else
-      std::cout << "WORD INVALID" << std::endl;
-      
-    std::cout << "enter the word: "<< std::flush;
-    
-  }
-  std::cout << std::endl;
+  if (first.state_node == second.state_node && first.rule_number == second.rule_number
+        && first.reduction_length < second.reduction_length)
+    return true;
+  
+  if (first.state_node == second.state_node && first.rule_number == second.rule_number
+        && first.reduction_length == second.reduction_length
+        && (first.first_part < second.first_part))
+    return true;
 
+  return false;
 }
-#endif
