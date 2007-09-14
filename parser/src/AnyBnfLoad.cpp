@@ -210,9 +210,9 @@ void AnyBnfLoad::process_line_comment(std::string line, int position)
 {
   std::string comment;
   std::string help_string;
-  std::string nont_name;
-  pcrecpp::RE re_dep("!import\\(\\s*((\"[^\"]+\"\\s*,\\s*)+)\"([^\"]+)\"\\s*\\)"); 
-  pcrecpp::RE re_nonterm("^\"([^\"]+)\"\\s*,\\s*");
+  // reference = "!import(" 1*( destination-nonterminal [ "as" source-nonterminal ] "," ) filename ")"
+  pcrecpp::RE re_dep("!import\\(\\s*((\"[^\"]+\"\\s*(?:\\s*as\\s*\"[^\"]+\"\\s*)?\\s*,\\s*)+)\"([^\"]+)\"\\s*\\)");
+  pcrecpp::RE re_nonterm("^\"([^\"]+)\"\\s*(?:\\s*as\\s*\"([^\"]+)\"\\s*)?\\s*,\\s*");
   dependency curr_dep;
 
   //take just the substring before line_comment symbol 
@@ -220,21 +220,26 @@ void AnyBnfLoad::process_line_comment(std::string line, int position)
   comment = line.substr(position);
   line = line.substr(0,position);
   m_grammar.insert_line(line);
-                                                 // VV this parameter is not used
-  if(re_dep.PartialMatch(comment, &help_string, &(curr_dep.source_nonterm), &(curr_dep.dest_grammar)))
+
+  std::string ignored; // this parameter is not used (for now)
+  if(re_dep.PartialMatch(comment, &help_string, &ignored, &(curr_dep.dest_grammar)))
   {
-    while(re_nonterm.PartialMatch(help_string, &nont_name))
+    while(re_nonterm.PartialMatch(help_string, &(curr_dep.dest_nonterm), &(curr_dep.source_nonterm)))
     {
       re_nonterm.Replace("", &help_string);
 
       curr_dep.source_grammar = m_current_grammar;
-      curr_dep.dest_nonterm = curr_dep.source_nonterm = nont_name;
+      // by default, source and destination nonterminal are identical
+      if(curr_dep.source_nonterm.empty())
+        curr_dep.source_nonterm = curr_dep.dest_nonterm;
       m_dependencies.push_back(curr_dep);
 
       if(m_verbose_level >= 1)
       {
-        std::cerr << "    Import: " << curr_dep.dest_nonterm << " from " << curr_dep.dest_grammar 
-                  << " to " << curr_dep.source_grammar << std::endl;
+        std::cerr << "    Import: " << curr_dep.dest_nonterm << " in " << curr_dep.dest_grammar << " to ";
+        if(curr_dep.source_nonterm != curr_dep.dest_nonterm)
+          std::cerr << curr_dep.source_nonterm << " in ";
+        std::cerr << curr_dep.source_grammar << std::endl;
       }
     }
   } 
@@ -1320,8 +1325,8 @@ void AnyBnfLoad::remove_unreachable (void)
   {
     if(m_nonterm_names.find(m_dependencies[k].dest_grammar) == m_nonterm_names.end())
     {
-      std::cerr << "Warning: file " << m_dependencies[k].dest_grammar << " referenced from " 
-                << m_dependencies[k].source_grammar << " not present." << std::endl;
+      std::cerr << "Warning: grammar file " << m_dependencies[k].dest_grammar << " referenced from " 
+                << m_dependencies[k].source_grammar << " not loaded." << std::endl;
     }
     else
     {
@@ -1338,12 +1343,12 @@ void AnyBnfLoad::remove_unreachable (void)
 
       if(m_dependencies[k].source_num == -1)
       {
-        std::cerr << "Warning: nonterminal " << m_dependencies[k].source_nonterm << " not present in " 
+        std::cerr << "Warning: referenced nonterminal " << m_dependencies[k].source_nonterm << " not present in " 
                   << m_dependencies[k].source_grammar << "." << std::endl;
       }
       else if(m_dependencies[k].dest_num == -1)
       {
-        std::cerr << "Warning: nonterminal " << m_dependencies[k].dest_nonterm << " not present in " 
+        std::cerr << "Warning: referenced nonterminal " << m_dependencies[k].dest_nonterm << " not present in " 
                   << m_dependencies[k].dest_grammar << "." << std::endl;
       }
       else
@@ -1448,13 +1453,19 @@ void AnyBnfLoad::remove_unreachable (void)
 }
 
 
-void AnyBnfLoad::add_grammar(std::string grammar, std::string config)
+void AnyBnfLoad::add_grammar(const std::string& grammar, const std::string& config)
 {
   std::string line_test;
-  m_current_grammar = grammar;
+  // extract grammar name, omitting the directory path
+  std::string::size_type namepos = grammar.find_last_of("\\/");
+  if (namepos != std::string::npos)
+    m_current_grammar.assign(grammar, namepos+1, grammar.size()-namepos-1);
+  else
+    m_current_grammar = grammar;
+
   m_current_grammar_id = m_grammar_names.size();
-  m_grammar_names.push_back(grammar);
-  
+  m_grammar_names.push_back(m_current_grammar);
+
   if(m_verbose_level >= 1)
     std::cerr << "## File processing start ##" << std::endl;
   // load grammar file
@@ -1510,6 +1521,18 @@ void AnyBnfLoad::add_grammar(std::string grammar, std::string config)
   if(m_verbose_level >= 1)
     std::cerr << "## File processing end ##" << std::endl;
   
+}
+
+void AnyBnfLoad::set_start_nonterm(const std::string& start_name, const std::string& start_grammar_name)
+{
+  m_start_set = true;
+  m_start_nonterm = start_name;
+  // extract grammar name, omitting the directory path
+  std::string::size_type namepos = start_grammar_name.find_last_of("\\/");
+  if (namepos != std::string::npos)
+    m_start_grammar.assign(start_grammar_name, namepos+1, start_grammar_name.size()-namepos-1);
+  else
+    m_start_grammar = start_grammar_name;
 }
 
 #ifdef _ANYBNFLOAD_TEST_

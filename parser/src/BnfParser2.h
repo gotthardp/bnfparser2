@@ -37,7 +37,7 @@ public:
   //! The parsing function. It takes a word and returns its (partial) syntax tree.
   /** \warning Must not be called before process().
    */
-  bool parse_word(std::string word);
+  bool parse_word(const std::string& word);
 
  //! Returns the result of the last parsing.
   bool get_parsing_result(void);
@@ -53,10 +53,10 @@ public:
   std::string get_semantic_string(void);
 
   //! Sets the name of the starting nonterminal and the name of the file containing it.
-  void set_start_nonterm(std::string start_name, std::string start_grammar_name);
+  void set_start_nonterm(const std::string& start_name, const std::string& start_grammar_name);
 
   //! Loads a grammar-file together with its configuration file (mutliple calls possible)
-  void add_grammar(std::string g_name, std::string c_name);
+  void add_grammar(const std::string& g_name, const std::string& c_name);
 
   //! Processes the set of grammar files added, computes GLALR table.
   void build_parser(void);

@@ -47,7 +47,7 @@ int main(int argc, char  *argv[])
         break;
       case 'h':
         printf(
-"Usage: %s [OPTION]... GRAMMAR METASYNTAX START\n"
+"Usage: %s [OPTION]... START ([@METASYNTAX] GRAMMAR)...\n"
 "Check input against a BNF syntax specification.\n"
 "\n"
 "  -d LEVEL, --debug=LEVEL   set debug to LEVEL (default %i)\n"
@@ -57,21 +57,18 @@ int main(int argc, char  *argv[])
 "Report bugs to <"PACKAGE_BUGREPORT">.\n",
           argv[0], debug_level, delimiter
         );
-        exit( 0 );
+        exit(0);
       case 'e':
         delimiter = atol(optarg);
         break;
 
       default:
-        printf( "Usage: %s [OPTION]... GRAMMAR METASYNTAX START\n", argv[0] );
+        printf( "Usage: %s [OPTION]... START ([@METASYNTAX] GRAMMAR)...\n", argv[0] );
         fprintf( stderr, "Try '%s --help' for more information.\n", argv[0] );
-        exit( 1 );
+        exit(1);
     }
   }
 
-  std::string grammar;
-  std::string metasyntax;
-  std::string start;
   BnfParser2 test(debug_level);
 
   if(argc-optind < 3)
@@ -81,12 +78,31 @@ int main(int argc, char  *argv[])
     return 1;
   }
 
-  grammar = argv[optind];
-  metasyntax = argv[optind+1];
-  start = argv[optind+2];
+  const char* start = argv[optind++];
+  const char* metasyntax = NULL;
 
+  const char* param = argv[optind++];
+  if(*param == '@')
+    metasyntax = param+1;
+  else
+  {
+    std::cerr << argv[0] << ": missing metasyntax specification" << std::endl;
+    exit(1);
+  }
+
+  // load start grammar
+  const char* grammar = argv[optind++];
   test.set_start_nonterm(start, grammar);
   test.add_grammar(grammar, metasyntax);
+  // load next grammars
+  while (optind < argc)
+  {
+    if(*(param = argv[optind++]) == '@')
+      metasyntax = param+1;
+    else
+      test.add_grammar(param, metasyntax);
+  }
+
   test.build_parser();
 
   int errcount = 0;

@@ -19,7 +19,7 @@
 #include "BnfParser2.h"
 #include "Parser.h"
 
-bool BnfParser2::parse_word(std::string word)
+bool BnfParser2::parse_word(const std::string& word)
 {
   return m_core_parser->parse_word(word);
 }
@@ -39,12 +39,12 @@ std::string BnfParser2::get_semantic_string(void)
   return m_core_parser->get_semantic_string();
 }
 
-void BnfParser2::set_start_nonterm(std::string start_name, std::string start_grammar_name)
+void BnfParser2::set_start_nonterm(const std::string& start_name, const std::string& start_grammar_name)
 {
   m_core_parser->set_start_nonterm(start_name, start_grammar_name);
 }
 
-void BnfParser2::add_grammar(std::string g_name, std::string c_name)
+void BnfParser2::add_grammar(const std::string& g_name, const std::string& c_name)
 {
   m_core_parser->add_grammar(g_name, c_name);
 }

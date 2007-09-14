@@ -92,16 +92,16 @@ public:
   //! The parsing function. It takes a word and returns true iff it is accepted.
   /** \warning Must not be called before build_parser().
    */
-  bool parse_word(std::string word);
+  bool parse_word(const std::string& word);
   
   //! Sets the name of the starting nonterminal and the name of the file containing it.
-  void set_start_nonterm(std::string start_name, std::string start_grammar_name)
+  void set_start_nonterm(const std::string& start_name, const std::string& start_grammar_name)
   {
     m_grammar.set_start_nonterm(start_name,start_grammar_name);
   }
 
   //! Loads a grammar-file together with its configuration file (mutliple calls possible)
-  void add_grammar(std::string g_name, std::string c_name)
+  void add_grammar(const std::string& g_name, const std::string& c_name)
   {
     m_grammar.add_grammar(g_name, c_name);
   }

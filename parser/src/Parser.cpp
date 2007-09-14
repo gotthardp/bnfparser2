@@ -19,7 +19,7 @@
 
 #include "Parser.h"
 
-bool Parser::parse_word(std::string word)
+bool Parser::parse_word(const std::string& word)
 {
   GSS::StateIdent initial_state;
   GSS::SymbolIdent not_an_ident;

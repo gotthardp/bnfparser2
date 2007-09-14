@@ -15,7 +15,7 @@
 
         CHAR           =  %x01-7F
                                ; any 7-bit US-ASCII character,
-                                  excluding NUL
+                               ;  excluding NUL
 
         CR             =  %x0D
                                ; carriage return

@@ -220,16 +220,11 @@ public:
    *  condensate_rules(), wipe_whitespace(), to_abnf(), to_bnf(), add_prefixes(),
    *  insert_into_table().
    */    
-  void add_grammar(std::string grammar, std::string config);
+  void add_grammar(const std::string& grammar, const std::string& config);
   
   //!  Sets the name of the starting nonterminal and the name of the file containing it.
-  void set_start_nonterm(std::string start_name, std::string start_grammar_name)
-  {
-    m_start_set = true;
-    m_start_nonterm = start_name;
-    m_start_grammar = start_grammar_name;
-  }
-  
+  void set_start_nonterm(const std::string& start_name, const std::string& start_grammar_name);
+
   //! Returns entire grammar structure
   std::multimap<int, std::vector<int> > get_grammar(void)
   {

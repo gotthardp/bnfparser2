@@ -9,6 +9,9 @@
 ;
 ; 2.2 "tel" URL scheme
 
+; !import("ALPHA", "CHAR", "DIGIT", "rfc2234-6.1.abnf")
+; !import("<domain>" as "domain", "rfc1035-2.3.abnf")
+
 telephone-url         = telephone-scheme ":"
                         telephone-subscriber
 telephone-scheme      = "tel"
