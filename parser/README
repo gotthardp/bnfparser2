@@ -1,0 +1,22 @@
+Part A. User Instructions
+=========================
+
+
+Part B. Developer Instructions
+==============================
+
+B.1. Build instructions
+----------------------------
+
+The following software need to be installed
+ - pcrecpp library (http://www.pcre.org)
+
+Configure and build the library by executing
+
+cd bnfparser2/parser
+automake
+./configure
+make
+
+
+$Id$

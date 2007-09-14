@@ -27,11 +27,13 @@
 int main(int argc, char  *argv[])
 {
   int debug_level = 0;
+  int delimiter = '\n';
 
   static struct option const long_options[] =
   {
     { "debug", required_argument, NULL, 'd' },
     { "help", no_argument, NULL, 'h' },
+    { "delimiter", required_argument, NULL, 'e' },
     { NULL, 0, NULL, 0 }
   };
 
@@ -48,13 +50,17 @@ int main(int argc, char  *argv[])
 "Usage: %s [OPTION]... GRAMMAR METASYNTAX START\n"
 "Check input against a BNF syntax specification.\n"
 "\n"
-"  -d LEVEL, --debug=LEVEL   set debug to LEVEL (default '%i')\n"
+"  -d LEVEL, --debug=LEVEL   set debug to LEVEL (default %i)\n"
+"  -e NUM, --delimiter=NUM   set word delimiter to NUM (default %i in ASCII)\n"
 "  --help                    display this help and exit\n"
 "\n"
 "Report bugs to <"PACKAGE_BUGREPORT">.\n",
-          argv[0], debug_level
+          argv[0], debug_level, delimiter
         );
         exit( 0 );
+      case 'e':
+        delimiter = atol(optarg);
+        break;
 
       default:
         printf( "Usage: %s [OPTION]... GRAMMAR METASYNTAX START\n", argv[0] );
@@ -91,7 +97,7 @@ int main(int argc, char  *argv[])
     // read new word
     // note: words are separated by \0, program is terminated by EOF
     int ch;
-    while((ch = fgetc(stdin)) > 0)
+    while((ch = fgetc(stdin)) != EOF && ch != delimiter)
       word += ch;
 
     if(test.parse_word(word))

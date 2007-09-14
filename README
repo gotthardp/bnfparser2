@@ -1,0 +1,37 @@
+Part A. User Instructions
+=========================
+
+This section describes software packages included in this repository. For more
+details please see README in respective subdirectories.
+
+  parser - Library of the generic BNF-adaptable parser, including standard
+    metasyntax definitions and BNF grammars.
+
+  wiretest - Sample application using the parser library. A tool checking
+    the network traffic against a BNF syntax specification.
+
+
+Part B. Developer Instructions
+==============================
+
+Source files should have the following properties
+  svn:eol-style=native
+  svn:keywords=Id
+
+Directories should have the following properties
+  svn:ignore=<files>
+
+
+The ~/.subversion/config can be modified to set some file properties
+automatically:
+
+enable-auto-props = yes
+
+[auto-props]
+*.c = svn:eol-style=native;svn:keywords=Id
+*.cpp = svn:eol-style=native;svn:keywords=Id
+*.h = svn:eol-style=native;svn:keywords=Id
+*.in = svn:eol-style=native;svn:keywords=Id
+
+
+$Id$
