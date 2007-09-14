@@ -1,4 +1,7 @@
-S = x %d13.10
-x = a x b /
-a = "a"
-b = "b"
+/*
+ * This grammar defines the language a^nb^n - the case of
+ * the letters is symmetrical
+ */
+S = x
+y = z
+x = %d97 x %d98 / %d65 x %d66 / "" ; epsilon

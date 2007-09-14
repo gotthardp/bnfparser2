@@ -860,23 +860,26 @@ bool operator<(const LalrTable::action& a1, const LalrTable::action& a2)
 void LalrTable::make_lalr_table(void)
 {
   if(m_verbose_level >= 1)
-    std::cerr << ">>>>COMPUTING first<<<<" << std::endl;
+    std::cerr << "## LALR table computing start##" << std::endl;
+
+  if(m_verbose_level >= 1)
+    std::cerr << "  computing first" << std::endl;
   compute_first();
   
   if(m_verbose_level >= 1)
-    std::cerr << ">>>>COMPUTING nont_first<<<<" << std::endl;
+    std::cerr << "  computing nont_first" << std::endl;
   compute_nont_first();
   
   if(m_verbose_level >= 1)
-    std::cerr << ">>>>COMPUTING neps_first<<<<" << std::endl;
+    std::cerr << "  computing neps_first" << std::endl;
   compute_neps_first();
   
   if(m_verbose_level >= 1)
-    std::cerr << ">>>>COMPUTING ext_nont_first<<<<" << std::endl;
+    std::cerr << "  computing ext_nont_first" << std::endl;
   compute_ext_nont_first();
   
   if(m_verbose_level >= 1)
-    std::cerr << ">>>>COMPUTING LR(0) items<<<<" << std::endl;
+    std::cerr << "  computing LR(0) items" << std::endl;
   compute_lr0_items();
   
   
@@ -912,7 +915,7 @@ void LalrTable::make_lalr_table(void)
   m_items.clear();
   
   if(m_verbose_level >= 1)
-    std::cerr << ">>>>COMPUTING lookaheads<<<<" << std::endl;
+    std::cerr << "  computing lookaheads" << std::endl;
   compute_lookaheads();
   
   
@@ -936,8 +939,11 @@ void LalrTable::make_lalr_table(void)
   }
 
   if(m_verbose_level >= 1)
-    std::cerr << ">>>>BUILDING GLALR table<<<<" << std::endl;
+    std::cerr << "  building GLALR table" << std::endl;
   build_table();
+
+  if(m_verbose_level >= 1)
+    std::cerr << "## LALR table computing end ##" << std::endl;
   
 }
 

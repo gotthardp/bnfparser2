@@ -209,19 +209,34 @@ std::vector<int> AnyBnfLoad::find_term_pos(std::string data)
 void AnyBnfLoad::process_line_comment(std::string line, int position)
 {
   std::string comment;
-  pcrecpp::RE re_dep("!\\(\\s*\"([^\"]+)\"\\s*,\\s*\"([^\"]+)\"\\s*\\)"); 
+  std::string help_string;
+  std::string nont_name;
+  pcrecpp::RE re_dep("!import\\(\\s*((\"[^\"]+\"\\s*,\\s*)+)\"([^\"]+)\"\\s*\\)"); 
+  pcrecpp::RE re_nonterm("^\"([^\"]+)\"\\s*,\\s*");
   dependency curr_dep;
+
   //take just the substring before line_comment symbol 
   //and insert it back into the file
   comment = line.substr(position);
   line = line.substr(0,position);
   m_grammar.insert_line(line);
-  
-  if(re_dep.PartialMatch(comment, &(curr_dep.source_nonterm), &(curr_dep.dest_grammar)))
+                                                 // VV this parameter is not used
+  if(re_dep.PartialMatch(comment, &help_string, &(curr_dep.source_nonterm), &(curr_dep.dest_grammar)))
   {
-    curr_dep.source_grammar = m_current_grammar;
-    curr_dep.dest_nonterm = curr_dep.source_nonterm;
-    m_dependencies.push_back(curr_dep);
+    while(re_nonterm.PartialMatch(help_string, &nont_name))
+    {
+      re_nonterm.Replace("", &help_string);
+
+      curr_dep.source_grammar = m_current_grammar;
+      curr_dep.dest_nonterm = curr_dep.source_nonterm = nont_name;
+      m_dependencies.push_back(curr_dep);
+
+      if(m_verbose_level >= 1)
+      {
+        std::cerr << "    Import: " << curr_dep.dest_nonterm << " from " << curr_dep.dest_grammar 
+                  << " to " << curr_dep.source_grammar << std::endl;
+      }
+    }
   } 
 }
 
@@ -714,18 +729,21 @@ void AnyBnfLoad::transform_names(void)
         //the found word is found for the first time
         m_nonterm_names[m_current_grammar][found_word_lc].insert(m_nonterm_count);
         m_nonterm_count++;
+        
+        m_names.insert(std::make_pair(m_nonterm_names[m_current_grammar][found_word_lc].val(),
+                              std::make_pair(found_word_lc, m_current_grammar_id)));
+                              //the name and the identifier of the grammar file it exists in
       }
       if(at_char == "") //normal non-terminal
         value << '\036'
               << m_nonterm_names[m_current_grammar][found_word_lc].val()
               << '\037';
+        
       else   //marked non-terminal
       {
         value << '\036' 
               << INT_MAX - m_nonterm_names[m_current_grammar][found_word_lc].val()
               << '\037';
-        m_marked_names.insert(std::make_pair(m_nonterm_names[m_current_grammar][found_word_lc].val(),
-                              found_word_lc));
       }
       //replace the previously found occurence of the found word with the appropriate number on
       //the current line
@@ -1300,16 +1318,42 @@ void AnyBnfLoad::remove_unreachable (void)
   
   for(unsigned k = 0; k < m_dependencies.size(); k++)
   {
-    if(m_grammar_case_sensitive[m_dependencies[k].source_grammar] == false)
-      for(unsigned i = 0; i < m_dependencies[k].source_nonterm.size(); i++)
-        m_dependencies[k].source_nonterm.at(i) = tolower(m_dependencies[k].source_nonterm.at(i));
+    if(m_nonterm_names.find(m_dependencies[k].dest_grammar) == m_nonterm_names.end())
+    {
+      std::cerr << "Warning: file " << m_dependencies[k].dest_grammar << " referenced from " 
+                << m_dependencies[k].source_grammar << " not present." << std::endl;
+    }
+    else
+    {
+      if(m_grammar_case_sensitive[m_dependencies[k].source_grammar] == false)
+        for(unsigned i = 0; i < m_dependencies[k].source_nonterm.size(); i++)
+          m_dependencies[k].source_nonterm.at(i) = tolower(m_dependencies[k].source_nonterm.at(i));
         
-    if(m_grammar_case_sensitive[m_dependencies[k].dest_grammar] == false)
-      for(unsigned i = 0; i < m_dependencies[k].dest_nonterm.size(); i++)
-        m_dependencies[k].dest_nonterm.at(i) = tolower(m_dependencies[k].dest_nonterm.at(i));
+      if(m_grammar_case_sensitive[m_dependencies[k].dest_grammar] == false)
+        for(unsigned i = 0; i < m_dependencies[k].dest_nonterm.size(); i++)
+          m_dependencies[k].dest_nonterm.at(i) = tolower(m_dependencies[k].dest_nonterm.at(i));
         
-    m_dependencies[k].source_num = m_nonterm_names[m_dependencies[k].source_grammar][m_dependencies[k].source_nonterm].val();
-    m_dependencies[k].dest_num = m_nonterm_names[m_dependencies[k].dest_grammar][m_dependencies[k].dest_nonterm].val();
+      m_dependencies[k].source_num = m_nonterm_names[m_dependencies[k].source_grammar][m_dependencies[k].source_nonterm].val();
+      m_dependencies[k].dest_num = m_nonterm_names[m_dependencies[k].dest_grammar][m_dependencies[k].dest_nonterm].val();
+
+      if(m_dependencies[k].source_num == -1)
+      {
+        std::cerr << "Warning: nonterminal " << m_dependencies[k].source_nonterm << " not present in " 
+                  << m_dependencies[k].source_grammar << "." << std::endl;
+      }
+      else if(m_dependencies[k].dest_num == -1)
+      {
+        std::cerr << "Warning: nonterminal " << m_dependencies[k].dest_nonterm << " not present in " 
+                  << m_dependencies[k].dest_grammar << "." << std::endl;
+      }
+      else
+      {
+        right_side.push_back(m_dependencies.at(k).dest_num);
+        m_global_table.insert(std::make_pair(m_dependencies.at(k).source_num, \
+            right_side));
+        right_side.clear();
+      }
+    }
   }
 
   
@@ -1358,14 +1402,18 @@ void AnyBnfLoad::remove_unreachable (void)
 
 
   //Now all the nonreachable rules are deleted
+  bool nonterm_present;
   for (int i=0; i!=m_nonterm_count; i++)//going through all the non-terminals
   {
     //if a nonterminal is reachable
-    if (processed_nonterm.find(i)!=processed_nonterm.end())
+    if (processed_nonterm.find(i) != processed_nonterm.end())
     {
-      if(m_verbose_level >= 2)
-      {
-        range_iter=m_global_table.equal_range(i);
+      nonterm_present = true;
+      range_iter=m_global_table.equal_range(i);
+      if(range_iter.first == range_iter.second)
+        nonterm_present = false;
+        
+      else if(m_verbose_level >= 2)
         for (CIT rip=range_iter.first; rip!=range_iter.second; ++rip)
         {
           std::cerr << i << " = ";
@@ -1374,7 +1422,13 @@ void AnyBnfLoad::remove_unreachable (void)
           std::cerr << std::endl;
         }
       
-        range_iter=m_global_table.equal_range(INT_MAX - i);
+      range_iter=m_global_table.equal_range(INT_MAX - i);
+      if(range_iter.first == range_iter.second && !nonterm_present)
+      {
+        std::cerr << "Warning: nonterminal " << m_names[i].first << " is not defined in "
+                  << m_grammar_names.at(m_names[i].second) << "." << std::endl;
+      }
+      else if(m_verbose_level >= 2)
         for (CIT rip=range_iter.first; rip!=range_iter.second; ++rip)
         {
           std::cerr << INT_MAX - i << " = ";
@@ -1382,7 +1436,6 @@ void AnyBnfLoad::remove_unreachable (void)
             std::cerr << (rip->second).at(j) << ' ';
           std::cerr << std::endl;
         }
-      }
     }
     //All the rules with a nonreachable nonterminal on the left side are
     //erased
@@ -1399,56 +1452,63 @@ void AnyBnfLoad::add_grammar(std::string grammar, std::string config)
 {
   std::string line_test;
   m_current_grammar = grammar;
+  m_current_grammar_id = m_grammar_names.size();
+  m_grammar_names.push_back(grammar);
   
+  if(m_verbose_level >= 1)
+    std::cerr << "## File processing start ##" << std::endl;
   // load grammar file
   if(m_verbose_level >= 1)
-    std::cerr<<"Loading grammar"<<std::endl;
+    std::cerr<<"  loading grammar"<<std::endl;
   m_grammar.load_file(grammar);
 
   //load grammar conf
   if(m_verbose_level >= 1)
-    std::cerr<<"Loading configuration" <<std::endl;
+    std::cerr<<"  loading configuration" <<std::endl;
   m_config.parse_conf(config);
 
   if(m_verbose_level >= 1)
-    std::cerr<<"Removing comments"<<std::endl;
+    std::cerr<<"  processing comments"<<std::endl;
   remove_comments();
   m_grammar.swap();
   
   if(m_verbose_level >= 1)
-    std::cerr<<"Transforming strings"<<std::endl;
+    std::cerr<<"  transforming strings"<<std::endl;
   transform_strings();
   m_grammar.swap();
 
   if(m_verbose_level >= 1)
-    std::cerr<<"Condensating rules"<<std::endl;
+    std::cerr<<"  condensating rules"<<std::endl;
   condensate_rules();
   m_grammar.swap();
   
   if(m_verbose_level >= 1)
-    std::cerr << "Reducing whitespace" << std::endl;
+    std::cerr << "  reducing whitespace" << std::endl;
   wipe_whitespace();
   m_grammar.swap();
   
   if(m_verbose_level >= 1)
-    std::cerr<<"Nonterminals to numbers"<<std::endl;
+    std::cerr<<"  nonterminals to numbers"<<std::endl;
   transform_names();
   m_grammar.swap();
   
   if(m_verbose_level >= 1)
-    std::cerr<<"Making ABNF"<<std::endl;
+    std::cerr<<"  making ABNF"<<std::endl;
   to_abnf();
   m_grammar.swap();
   
   if(m_verbose_level >= 1)
-    std::cerr<<"Making BNF"<<std::endl;
+    std::cerr<<"  making BNF"<<std::endl;
   to_bnf();
   m_grammar.swap();
   
   if(m_verbose_level >= 1)
-    std::cerr<<"Inserting into global table"<<std::endl;
+    std::cerr<<"  inserting into global table"<<std::endl;
   insert_into_table();
   m_grammar.swap();
+  
+  if(m_verbose_level >= 1)
+    std::cerr << "## File processing end ##" << std::endl;
   
 }
 

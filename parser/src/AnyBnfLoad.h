@@ -82,6 +82,9 @@ private:
   
   //!Contains the name of the processed grammar file
   std::string m_current_grammar;
+
+  //!Contains the numeric identifier of the current grammar file
+  unsigned m_current_grammar_id;
   
   //!This structure stores the dependecies between grammar files.
   /** If the grammar file A contains nonterminal called a_n, which is
@@ -114,11 +117,18 @@ private:
     int& val() { return i; }  //!<returns the number
   };
 
-  //!Maps names of nonterminals to numbers, is cleared for each grammar
+  //!Maps names of nonterminals to numbers, stored for each grammar
   std::map<std::string, std::map<std::string, count> > m_nonterm_names;
+
+  //!For each grammar it stores if its rulenames are case sensitive
   std::map<std::string, bool> m_grammar_case_sensitive;
   
-  std::map<int, std::string> m_marked_names;
+  //!Maps all the nonterminal numbers back to its original names.
+  //!The information is not stored for newly created nonterminals
+  std::map<int, std::pair<std::string, unsigned> > m_names;
+
+  //!Stores the names of all the grammars added
+  std::vector<std::string> m_grammar_names;
 
   //!Counts nonterminals continuosly (is not reset to 0 after finishing one grammar).
   int m_nonterm_count;
@@ -229,8 +239,8 @@ public:
   //! Returns the name of the specified nonterminal (if it is marked)
   std::string get_marked_name(int nonterm_number)
   {
-    if(m_marked_names.count(nonterm_number) > 0)
-      return m_marked_names[nonterm_number];
+    if(m_names.count(nonterm_number) > 0)
+      return m_names[nonterm_number].first;
     else
       return "";
   }

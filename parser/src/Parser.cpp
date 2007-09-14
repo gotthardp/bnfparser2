@@ -40,9 +40,6 @@ bool Parser::parse_word(std::string word)
   else 
     first_character = -LalrTable::end_of_input;
 
-
-  if(m_verbose_level >= 1)
-    std::cerr << "Parsing started " << std::endl;
   for(actions = m_table->get_actions(0, first_character).begin();
       actions != m_table->get_actions(0, first_character).end();
       actions++)
