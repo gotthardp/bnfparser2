@@ -50,7 +50,6 @@ bool Parser::parse_word(const std::string& word)
       m_r.insert(RMember(initial_state, actions->reduce_by, 0, not_an_ident));
   }
 
-
   for(i = 0; i <= word.size(); i++)
   {
     if(i < word.size())
@@ -423,7 +422,7 @@ void Parser::reducer(unsigned i, int a_i_plus_1)
   delete now_processed;
 }
 
-void Parser::process_grammar(std::multimap<int, std::vector<int> > grammar, unsigned nonterm_count)
+void Parser::process_grammar(const std::multimap<int, std::vector<int> >& grammar, unsigned nonterm_count)
 {
   m_table = new LalrTable(nonterm_count, m_verbose_level);
   m_table->load(grammar);
@@ -455,3 +454,5 @@ bool operator<(const Parser::RMember & first, const Parser::RMember & second)
 
   return false;
 }
+
+// end of file

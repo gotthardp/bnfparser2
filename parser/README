@@ -1,11 +1,10 @@
 Part A. User Instructions
 =========================
 
+  bnfcheck - A universal syntax validation utility.
+    See man bnfcheck(1).
 
-Part B. Developer Instructions
-==============================
-
-B.1. Build instructions
+A.1. Build instructions
 ----------------------------
 
 The following software need to be installed
@@ -13,10 +12,22 @@ The following software need to be installed
 
 Configure and build the library by executing
 
-cd bnfparser2/parser
 automake
-./configure
+./configure --prefix=/usr/local
 make
+make install
+
+Assuming the software was installed with the /usr/local prefix,
+the following environment variables have to be set
+  PATH=... :/usr/local/bin
+  LD_LIBRARY=... :/usr/local/lib
+  MANPATH=... :/usr/local/share/man
+
+
+Part B. Developer Instructions
+==============================
+
+TODO
 
 
 $Id$

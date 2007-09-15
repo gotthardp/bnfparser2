@@ -17,23 +17,6 @@
  * $Id$
  */
 
-///////////////
-//  AnyBnfFile.h
-///////////////
-//  Contains the AnyBnfFile class.
-//  It's used for iterative text-file editing.
-//  This means reading a line and inserting a set of lines
-//  in place of the read line. When entire file is processed,
-//  another processing can start over.
-//  THE SOURCE FILE IS NOT MODIFIED UNLESS write_back() is called.
-//  
-//  All the stuff is done by using two temporary files and
-//  moving data between them.
-///////////////
-//  Author: Vaclav Vacek
-///////////////
-
-
 /*
  *  TODO - better exceptions??
  *  
@@ -75,8 +58,6 @@ private:
   
   bool m_temp1_created; //!<True if the first temporary file has been created
   bool m_temp2_created; //!<True if the first temporary file has been created
-  
-
 
 public:
   //! prepares the specified file specified for using
@@ -88,7 +69,7 @@ public:
    *  returns - nothing
    *  side effects - rewriting the temp files, opening them
    */      
-  void load_file(std::string name);   
+  void load_file(const std::string& name);
      
   //!  Reads a line from the file and REMOVES IT. 
   /** argument - nothing
@@ -97,14 +78,12 @@ public:
    */
   std::string get_line(void);
 
-
-
   //!  Inserts a line into the file. 
   /*  argument - string containing data to be written
    *  returns - nothing
    *  side effects - adds a line to the file
    */
-  void insert_line(std::string data);
+  void insert_line(const std::string& data);
   
   //! EOF checker
   /*  argument - nothing
@@ -119,7 +98,6 @@ public:
    *  side effects - swaps read and write file
    */
   void swap(void);    
-
 
   //!  Writes the processed data back to the source file and ends processing the file.
   /*  argument - nothing
@@ -155,5 +133,6 @@ public:
   }
 };
 
-
 #endif  //_ANYBNFFILE_
+
+// end of file

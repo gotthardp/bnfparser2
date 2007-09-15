@@ -18,27 +18,7 @@
  * $Id$
  */
 
-/////////////////////
-//  AnyBnfConf.h
-//////////////
-/*
-  Contains the AnyBnfConf class.
-  This class is used for parsing the metaconfiguration 
-  from a given file. The acquired information is stored 
-  in two separate structures - one is for basic symbols 
-  and syntax that has to be included in any grammar such 
-  as syntax of rulename, definition symbol, group symbols etc.. 
-  Second is for arbitrary operators that are defined using 
-  regular expressions in Perl syntax. These structures are 
-  accesible by get_base() and get_operator() functions.
-*//////////////
-//  Author: Petr Slovak
-///////////////
-
-
-//TESTING
 //#define _ANYBNFCONF_TEST_
-
 
 #ifndef _ANYBNFCONF_
 #define _ANYBNFCONF_
@@ -96,14 +76,13 @@ private:
     char output[m_max_line_length];     //!<the variables for storing returned data
     
     std::fstream m_output;  //!<  test output stream 
-
     
 public:
     std::string get_operators(int num);  //!<returns regular expression describing the requested operator
     inline int get_ops_num(void){ return m_operators_max;}//!<returns the number of user-defined operators
     std::string get_base(int base_name); //!<returns regular expression describing the requested base symbol
     std::string get_base_re(int base_name, int doub=1);//!<returns RE describing the requested base sybmol, metachars are backslashed
-    bool parse_conf(std::string m_conf_name);    //!<parses the given configuration file
+    bool parse_conf(const std::string& m_conf_name); //!<parses the given configuration file
     void check_conf(void); //!< testing procedure, writes all the data to a textfile
     
     
@@ -111,8 +90,8 @@ public:
     :m_operators_max(0),m_operators_flag(false), m_conf_loaded(false)
     {}
     ~AnyBnfConf() {}
-
 };
 
-
 #endif  //_ANYBNFCONF_
+
+// end of file

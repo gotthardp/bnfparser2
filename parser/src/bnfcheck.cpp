@@ -32,13 +32,13 @@ int main(int argc, char  *argv[])
   static struct option const long_options[] =
   {
     { "debug", required_argument, NULL, 'd' },
-    { "help", no_argument, NULL, 'h' },
     { "delimiter", required_argument, NULL, 'e' },
+    { "help", no_argument, NULL, 'h' },
     { NULL, 0, NULL, 0 }
   };
 
   char optc;
-  while(( optc = getopt_long( argc, argv, "d:h", long_options, NULL )) != -1 )
+  while(( optc = getopt_long( argc, argv, "de:h", long_options, NULL )) != -1 )
   {
     switch( optc )
     {
@@ -47,7 +47,7 @@ int main(int argc, char  *argv[])
         break;
       case 'h':
         printf(
-"Usage: %s [OPTION]... START ([@METASYNTAX] GRAMMAR)...\n"
+"Usage: %s [OPTION]... SYMBOL ([:VARIANT] SYNTAX)...\n"
 "Check input against a BNF syntax specification.\n"
 "\n"
 "  -d LEVEL, --debug=LEVEL   set debug to LEVEL (default %i)\n"
@@ -63,7 +63,7 @@ int main(int argc, char  *argv[])
         break;
 
       default:
-        printf( "Usage: %s [OPTION]... START ([@METASYNTAX] GRAMMAR)...\n", argv[0] );
+        printf( "Usage: %s [OPTION]... SYMBOL ([:VARIANT] SYNTAX)...\n", argv[0] );
         fprintf( stderr, "Try '%s --help' for more information.\n", argv[0] );
         exit(1);
     }
@@ -78,29 +78,29 @@ int main(int argc, char  *argv[])
     return 1;
   }
 
-  const char* start = argv[optind++];
-  const char* metasyntax = NULL;
+  const char* symbol = argv[optind++];
+  const char* variant = NULL;
 
   const char* param = argv[optind++];
-  if(*param == '@')
-    metasyntax = param+1;
+  if(*param == ':')
+    variant = param+1;
   else
   {
-    std::cerr << argv[0] << ": missing metasyntax specification" << std::endl;
+    std::cerr << argv[0] << ": missing variant specification" << std::endl;
     exit(1);
   }
 
   // load start grammar
-  const char* grammar = argv[optind++];
-  test.set_start_nonterm(start, grammar);
-  test.add_grammar(grammar, metasyntax);
+  const char* syntax = argv[optind++];
+  test.set_start_nonterm(symbol, syntax);
+  test.add_grammar(syntax, variant);
   // load next grammars
   while (optind < argc)
   {
-    if(*(param = argv[optind++]) == '@')
-      metasyntax = param+1;
+    if(*(param = argv[optind++]) == ':')
+      variant = param+1;
     else
-      test.add_grammar(param, metasyntax);
+      test.add_grammar(param, variant);
   }
 
   test.build_parser();

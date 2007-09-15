@@ -18,26 +18,8 @@
  * $Id$
  */
 
-/////////////////////
-//  AnyBnfConf.cpp
-///////////////
-/*
-  Contains the AnyBnfConf class.
-  This class is used for parsing the metaconfiguration 
-  from a given file. The acquired information is stored 
-  in two separate structures - one is for basic symbols 
-  and syntax that has to be included in any grammar such 
-  as syntax of rulename, definition symbol, group symbols etc.. 
-  Second is for arbitrary operators that are defined using 
-  regular expressions in Perl syntax. These structures are 
-  accesible by get_base() and get_operator() functions.
-*//////////////
-//  Author: Petr Slovak
-///////////////
-
 #include <iostream>
 #include "AnyBnfConf.h"
-
 
 std::string AnyBnfConf::extract(void)
 {
@@ -77,7 +59,6 @@ bool AnyBnfConf::check_operator(void)
     return(false);
 } 
 
-
 void AnyBnfConf::reset(void)
 {
   m_operators.clear();
@@ -100,8 +81,7 @@ void AnyBnfConf::reset(void)
 
 } 
 
-
-bool AnyBnfConf::parse_conf(std::string conf_name)
+bool AnyBnfConf::parse_conf(const std::string& conf_name)
 {
   reset();
   m_operators_flag=false;
@@ -172,8 +152,6 @@ std::string AnyBnfConf::get_operators(int num)
   return(m_operators[num]);
 }
 
-
-
 std::string AnyBnfConf::get_base(int base_name)
 {
   switch(base_name)
@@ -196,7 +174,6 @@ std::string AnyBnfConf::get_base(int base_name)
   }
 }
 
-
 std::string AnyBnfConf::get_base_re(int base_name, int doub)
 {
   std::string source, result;
@@ -217,7 +194,6 @@ std::string AnyBnfConf::get_base_re(int base_name, int doub)
   result += source.substr(pos_before);
   return result;
 }
-
 
 void AnyBnfConf::check_conf(void)
 {
@@ -251,10 +227,7 @@ void AnyBnfConf::check_conf(void)
   m_output.close(); 
 }
 
-
-
-//#ifdef _ANYBNFCONF_TEST_
-/*
+#ifdef _ANYBNFCONF_TEST_
 int main(void)
 {
     AnyBnfConf hello;
@@ -262,5 +235,6 @@ int main(void)
     hello.check_conf();
     return(0);
 }
-*/
-//#endif    
+#endif    
+
+// end of file

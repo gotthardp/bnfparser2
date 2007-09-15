@@ -16,6 +16,7 @@
  *
  * $Id$
  */
+
 #include "BnfParser2.h"
 #include "Parser.h"
 
@@ -63,3 +64,5 @@ BnfParser2::~BnfParser2(void)
 {
   delete m_core_parser;
 }
+
+// end of file

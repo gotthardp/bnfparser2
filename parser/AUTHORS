@@ -1,0 +1,20 @@
+The bnfparser2 was initially developped by
+
+Institute for Theoretical Computer Science (ITI) research center
+Faculty of Informatics, Masaryk University Brno,
+http://iti.fi.muni.cz
+
+Vaclav Vacek <vacek@ics.muni.cz>
+    Main software design, implementation and maintenance.
+Petr Slovak <slovak@ics.muni.cz>
+Vojtech Rehak <rehak@fi.muni.cz>
+
+ANF DATA spol. s r.o.
+Siemens IT Solutions and Services, PSE Czech Republic,
+http://www.anfdata.cz
+
+Radek Sedlacek <radek.sedlacek@siemens.com>
+Petr Gotthard <petr.gotthard@siemens.com>
+
+
+$Id$

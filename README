@@ -22,6 +22,12 @@ Directories should have the following properties
   svn:ignore=<files>
 
 
+This can be set by the following commands
+  svn ps svn:eol-style "native" FILE...
+  svn ps svn:keywords "Id" FILE...
+  svn pg svn:ignore DIR > FILE
+  svn ps svn:ignore DIR -F FILE
+
 The ~/.subversion/config can be modified to set some file properties
 automatically:
 

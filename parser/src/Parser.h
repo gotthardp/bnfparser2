@@ -151,8 +151,6 @@ public:
     return m_semantic_string;
   }
 
-
-
 private:
   //! Stores the result of the last parsing. 
    bool m_last_accepted;
@@ -195,7 +193,6 @@ private:
    */ 
   void reducer(unsigned i, int a_i_plus_1);
   
-  
   //! Allocates memory, loads the grammar structure and creates the GLALR(1) table.
   /** The first parameter is the grammar structure - it is a multimap; the key
    *  is the LHS of the rule, the value is the RHS of the rule. The number of
@@ -204,7 +201,9 @@ private:
    *  \warning Must be called before any parse_word() call.    
    *
    */
-  void process_grammar(std::multimap<int, std::vector<int> > grammar, unsigned nonterm_count);
+  void process_grammar(const std::multimap<int, std::vector<int> >& grammar, unsigned nonterm_count);
 };
 
 #endif
+
+// end of file

@@ -1,0 +1,84 @@
+." bnfparser2 - Generic BNF-adaptable parser
+." http://bnfparser2.sourceforge.net
+."
+."      This library is free software; you can redistribute it and/or
+."      modify it under the terms of the GNU Lesser General Public
+."      License version 2.1, as published by the Free Software Foundation.
+."
+."      This library is distributed in the hope that it will be useful,
+."      but WITHOUT ANY WARRANTY; without even the implied warranty of
+."      MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+."      Lesser General Public License for more details.
+."
+." Copyright (c) 2007 ANF DATA spol. s r.o.
+."
+." $Id$
+."
+.TH bnfcheck 1 "September 15, 2007" "version 0.1" "USER COMMANDS"
+.SH NAME
+bnfcheck \- check input against a BNF syntax specification
+.SH SYNOPSIS
+.B bnfcheck
+[OPTION]... SYMBOL ([:VARIANT] SYNTAX)...
+.SH DESCRIPTION
+A universal syntax validation utility utilizing a generic BNF-adaptable parser
+(bnfparser2). The parser is generated at run-time depending on given syntax
+specification in a Backus-Naur Form (BNF).
+.br
+The tool reads from standard input words separated by a given delimiter (option -e)
+and checks if the syntax conforms to the specification.
+.PP
+.B SYNTAX
+Syntax specification using a particular VARIANT of BNF. (A file describing
+the BNF grammar.) The specification may span several files.
+.PP
+.B :VARIANT
+Specification of a BNF variant used by next SYNTAX parameter. (A file describing
+a syntax of the BNF grammar.) The first SYNTAX must have VARIANT defined.
+For additional SYNTAX specifications the VARIANT parameter is optional.
+.br
+Note: The file name and path must be prefixed with `:' (colon).
+.PP
+.B SYMBOL
+Symbol to be checked. (A start nonterminal of the BNF grammar.)
+Must be defined in the first SYNTAX.
+.SH OPTIONS
+.TP
+\-e NUM, --delimiter=NUM
+set word delimiter to an ASCII character with decimal value NUM.
+Default delimiter is LF(10).
+.TP
+\-d LEVEL, --debug=LEVEL
+for debugging purposes: set verbosity to a given LEVEL
+.TP
+\--help
+display a short help text and exit
+.SH EXIT STATUS
+Returns count of input words with syntax errors.
+.SH EXAMPLES
+Start parser for SIP messages according to RFC3261. The messages will
+be read from standard input and delimited by ASCII \\0 (zero).
+.PP
+.B bnfcheck
+\-e 0 sip-message \\
+    :share/conf/abnf.conf share/specs/rfc3261-25.abnf \\
+    share/specs/rfc2806-2.abnf share/specs/rfc2234-6.1.abnf \\
+    :share/conf/abnf-rfc1035.conf share/specs/rfc1035-2.3.abnf
+.SH REPORTING BUGS
+Report bugs to <bnfparser2-devel@lists.sourceforge.net>.
+.SH CREDITS
+Institute for Theoretical Computer Science (ITI) research center
+.br
+Faculty of Informatics, Masaryk University Brno
+.PP
+ANF DATA spol. s r.o.
+.br
+Siemens IT Solutions and Services, PSE Czech Republic
+.SH COPYRIGHT
+Copyright (c) 2007 ANF DATA spol. s r.o.
+.br
+Copyright (c) 2007 Vaclav Vacek
+.PP
+This is free software. You may redistribute it and/or modify it under the
+terms of the GNU Lesser General Public License version 2.1, as published
+by the Free Software Foundation.

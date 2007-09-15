@@ -18,13 +18,13 @@
 
 prefix = @prefix@
 datarootdir = @datarootdir@
-datadir = @datadir@
+mandir = @mandir@
 
-installdir = $(datadir)/BnfParser2
+installdir = $(datadir)/bnfparser2
 
 all clean distclean:
 # no operation
 
 install:
-	mkdir -p $(installdir)
-	cp -rpf conf specs $(installdir)
+	mkdir -p $(mandir)/man1
+	cp -pf *.1 $(mandir)/man1

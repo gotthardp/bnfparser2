@@ -17,14 +17,6 @@
  * $Id$
  */
 
-////////////////////////////
-//   LalrTable.h
-////////////////////////////
-
-////////////////////////////
-//   Author: Vaclav Vacek
-////////////////////////////
-
 #include <iostream>
 #include <vector>
 #include <map>
@@ -33,8 +25,6 @@
 #include <list>
 #include <stdexcept>
 #include <fstream>
-
-
 
 /** \brief This is the main class for building GLALR table.
  *
@@ -229,7 +219,7 @@ private:
 
   
   //! Prints the LR(0) item on cerr.
-  void print_item(std::pair<int, int>);
+  void print_item(const std::pair<int, int>& item);
   
   //! Fills the #m_firsts structure for all the nonterminals.
   void compute_first(void);
@@ -266,13 +256,13 @@ public:
   }
   
   //! Takes the multimap and reads the data
-  void load(std::multimap<int, std::vector<int> >&);
+  void load(const std::multimap<int, std::vector<int> >& input);
   
   //! The main processing procedure
   void make_lalr_table(void);
   
   //! Prints the table to the specified file. Must not be called before make_lalr_table()!
-  void print_table(std::string file_name);
+  void print_table(const std::string& file_name);
 
   //! Returns the set of possible action in specified state and lookahead.
   const std::set<action> & get_actions(int state, int lookahead)
@@ -328,3 +318,5 @@ public:
     m_verbose_level = vl;
   }
 };
+
+// end of file

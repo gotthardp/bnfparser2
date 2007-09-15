@@ -19,7 +19,7 @@
 
 #include "GSS.h"
 
-std::vector<std::pair<GSS::StateIdent, std::string> > GSS::find_reachable(GSS::StateIdent from, unsigned length, GSS::SymbolIdent first_part)
+std::vector<std::pair<GSS::StateIdent, std::string> > GSS::find_reachable(const GSS::StateIdent& from, unsigned length, const GSS::SymbolIdent& first_part)
 {
   unsigned i;
   std::set<std::pair<unsigned, std::string> > symbols;
@@ -39,7 +39,6 @@ std::vector<std::pair<GSS::StateIdent, std::string> > GSS::find_reachable(GSS::S
   }
   else
     states.insert(std::make_pair(std::make_pair(from.level, from.id), ""));
-    
   
   while(length > 0)
   {
@@ -107,8 +106,6 @@ bool operator==(const GSS::StateIdent & first, const GSS::StateIdent & second)
   return (first.level == second.level && first.id == second.id);
 }
 
-
-
 #ifdef GSS_TEST
 int main()
 {
@@ -137,3 +134,5 @@ int main()
   return 0;
 }
 #endif
+
+// end of file

@@ -1,26 +1,29 @@
 #!/bin/bash
-# usage: call-abnfgen GRAMMAR START [COUNT]
+# usage: call-abnfgen START SYNTAX [COUNT]
 
 TESTFILE=`mktemp` || exit 1
 TMPDIR=`mktemp -d` || exit 1
 # generate test files
-abnfgen -d $TMPDIR -n ${3:-50} $1
+abnfgen -d $TMPDIR -s $1 -n ${3:-50} $2
 # combine test-cases into one file, separated by '\0'
 for i in `ls $TMPDIR`;
 do
+  if [ -s $TESTFILE ]; then
+    # file is not empty, add delimiter
+    echo -ne '\00' >> $TESTFILE
+  fi
   cat $TMPDIR/$i >> $TESTFILE
-  echo -ne '\00' >> $TESTFILE
 done    
 # remove the test files
 rm -rf $TMPDIR
 
 # execute the parser
-../bnfcheck $1 ../share/conf/abnf.conf $2 < $TESTFILE
+../bnfcheck -e 0 $1 :../share/conf/abnf.conf $2 < $TESTFILE
 
 RETCODE=$?
 if [ $RETCODE != 0 ]; then
   # we got an error, do NOT remove the test file
-  echo "$1: error occured, see $TESTFILE"
+  echo "$0: error occured, see $TESTFILE"
   exit 1
 fi
 

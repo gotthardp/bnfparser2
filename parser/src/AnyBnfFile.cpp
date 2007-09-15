@@ -17,22 +17,10 @@
  * $Id$
  */
 
-///////////////
-//  AnyBnfFile.cpp
-///////////////
-//  Contains the implementation of the AnyBnfFile's methods.
-//  The class provides a simple line-based
-//  read-write access to a text file.
-//  The main purpose is modifying contents of the file.
-///////////////
-//  Author: Vaclav Vacek
-///////////////
-
 #include <iostream>
 #include "AnyBnfFile.h"
 
-
-void AnyBnfFile::load_file(std::string name)
+void AnyBnfFile::load_file(const std::string& name)
 {
   std::string read_line;
 
@@ -77,7 +65,6 @@ void AnyBnfFile::load_file(std::string name)
 
 }
 
-
 std::string AnyBnfFile::get_line(void)
 {
   if(!m_file_loaded)
@@ -92,9 +79,7 @@ std::string AnyBnfFile::get_line(void)
   return return_line;
 }
 
-
-
-void AnyBnfFile::insert_line(std::string data)
+void AnyBnfFile::insert_line(const std::string& data)
 {
   if(!m_file_loaded)
     throw std::runtime_error("File error");
@@ -108,12 +93,10 @@ void AnyBnfFile::insert_line(std::string data)
     m_output << '\n' << data;
 }
 
-
 bool AnyBnfFile::end_of_file(void)
 {
   return m_input.eof();
 }
-
 
 void AnyBnfFile::swap(void)
 {
@@ -140,7 +123,6 @@ void AnyBnfFile::swap(void)
   m_first_entry = true;
 
 }
-
 
 void AnyBnfFile::write_back(void)
 {
@@ -176,7 +158,6 @@ int main(void)
 {
   AnyBnfFile a;
   std::string line;
-
   
   try
   {
@@ -195,8 +176,9 @@ int main(void)
     std::cerr << line << std::endl;
   }
 
-
   a.write_back();
   return 0;
 }
 #endif
+
+// end of file

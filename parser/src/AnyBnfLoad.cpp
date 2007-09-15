@@ -18,21 +18,6 @@
  * $Id$
  */
 
-///////////////
-//  AnyBnfLoad.cpp
-///////////////
-//  Contains the AnyBnfLoad's methods.
-//  This is the main file-loading class.
-//  First it loads the grammar and configuration file.
-//  Then it performs the preprocessing steps.
-//  Finally it adds the modified grammar into the table.
-//  
-///////////////
-//   Author: Petr Slovak and Vaclav Vacek 
-///////////////
-
-
-//#define _ANYBNFLOAD_TEST_
 #include <iostream>
 #include "AnyBnfLoad.h"
 
@@ -47,8 +32,6 @@ void AnyBnfLoad::remove_empty(void)
   }
 
 }
-
-
 
 void AnyBnfLoad::remove_comments(void)  
 {
@@ -77,7 +60,6 @@ void AnyBnfLoad::remove_comments(void)
     lcom_pos=std::string::npos;
     comment_flag=false;
     cur_pos=0;
-  
 
 // we need to keep checking the line, until no valid comment symbols are left 
     if (get_line)
@@ -182,8 +164,7 @@ void AnyBnfLoad::remove_comments(void)
   }
 }
 
-
-std::vector<int> AnyBnfLoad::find_term_pos(std::string data)
+std::vector<int> AnyBnfLoad::find_term_pos(const std::string& data)
 {
   bool flag=false;
   int cur_pos=0;
@@ -204,9 +185,8 @@ std::vector<int> AnyBnfLoad::find_term_pos(std::string data)
   }
   return(terminal_pos);
 }
- 
 
-void AnyBnfLoad::process_line_comment(std::string line, int position)
+void AnyBnfLoad::process_line_comment(const std::string& line, int position)
 {
   std::string comment;
   std::string help_string;
@@ -218,8 +198,7 @@ void AnyBnfLoad::process_line_comment(std::string line, int position)
   //take just the substring before line_comment symbol 
   //and insert it back into the file
   comment = line.substr(position);
-  line = line.substr(0,position);
-  m_grammar.insert_line(line);
+  m_grammar.insert_line(line.substr(0,position));
 
   std::string ignored; // this parameter is not used (for now)
   if(re_dep.PartialMatch(comment, &help_string, &ignored, &(curr_dep.dest_grammar)))
@@ -257,8 +236,10 @@ std::string AnyBnfLoad::remove_group_comment(std::string line, int position)
   
   while(1)
   {
-//  if (m_grammar.end_of_file())
-//    throw std::runtime_error("File error");
+    // avoid infinite loop when group comment is not closed
+    if (m_grammar.end_of_file())
+      throw std::runtime_error("Syntax error: Group comment not closed");
+
     switch(state)
     {
       case 0: //The starting state
@@ -330,7 +311,7 @@ void AnyBnfLoad::condensate_rules(void)
     std::cerr<<"ENTER Condensate"<<std::endl;
   if (m_grammar.end_of_file())
   {
-    throw std::runtime_error("Condensate error 1");
+    throw std::runtime_error("Syntax error: Unexpected end of file (1)");
   }
   current=m_grammar.get_line();
 
@@ -341,7 +322,7 @@ void AnyBnfLoad::condensate_rules(void)
   {
     if (m_grammar.end_of_file())
     {
-     throw std::runtime_error("Condensate error 2");
+     throw std::runtime_error("Syntax error: Unexpected end of file (2)");
     }
     if(m_verbose_level >= 2)
       std::cerr<<"Blank skipped"<<std::endl;
@@ -350,21 +331,24 @@ void AnyBnfLoad::condensate_rules(void)
  
   if(m_verbose_level >= 2)
     std::cerr<<"^^ENTER Condensate   "<<current<<std::endl;
+
   //after this if block, string in 'current' variable will have following format:
   //<rulename><?wsp><defined><?anything else>
   if (!re_rule_wsp_def.PartialMatch(current))
   {
+    if(m_verbose_level >= 2)
+      std::cerr<<"  Not a definiton: "<<current<<std::endl;
     //find first none blank line
     if (m_grammar.end_of_file())
     {
-      throw std::runtime_error("Condensate error 4");
+      throw std::runtime_error("Syntax error: Unexpected end of file (3)");
     }
     next=m_grammar.get_line();
     while (re_blank.FullMatch(next))
     {
       if (m_grammar.end_of_file())
       {
-        throw std::runtime_error("Condensate error 5");
+        throw std::runtime_error("Syntax error: Unexpected end of file (4)");
       }
       if(m_verbose_level >= 2)
         std::cerr<<"getting new line because of the previous being blank"<<std::endl;
@@ -527,7 +511,6 @@ void AnyBnfLoad::condensate_rules(void)
   if(m_verbose_level >= 2)
     std::cerr<<"PASS SUCCESFULL"<<std::endl;
 }
-
 
 void AnyBnfLoad::wipe_whitespace(void)
 {
@@ -789,6 +772,7 @@ void AnyBnfLoad::transform_names(void)
     }
   }*/
 }
+
 void AnyBnfLoad::to_abnf(void)
 {
   std::string oper, pattern, definition;
@@ -1172,8 +1156,6 @@ void AnyBnfLoad::to_bnf(void)
     
 }
 
-
-
 void AnyBnfLoad::insert_into_table(void)
 {
   std::string current;
@@ -1452,7 +1434,6 @@ void AnyBnfLoad::remove_unreachable (void)
   }
 }
 
-
 void AnyBnfLoad::add_grammar(const std::string& grammar, const std::string& config)
 {
   std::string line_test;
@@ -1470,12 +1451,12 @@ void AnyBnfLoad::add_grammar(const std::string& grammar, const std::string& conf
     std::cerr << "## File processing start ##" << std::endl;
   // load grammar file
   if(m_verbose_level >= 1)
-    std::cerr<<"  loading grammar"<<std::endl;
+    std::cerr << "  loading grammar: " << grammar << std::endl;
   m_grammar.load_file(grammar);
 
   //load grammar conf
   if(m_verbose_level >= 1)
-    std::cerr<<"  loading configuration" <<std::endl;
+    std::cerr << "  loading configuration: " << config << std::endl;
   m_config.parse_conf(config);
 
   if(m_verbose_level >= 1)
@@ -1556,3 +1537,5 @@ int main(void)
   return 0;
 }
 #endif
+
+// end of file

@@ -17,17 +17,9 @@
  * $Id$
  */
 
-////////////////////////////
-//   LalrTable.cpp
-////////////////////////////
-
-////////////////////////////
-//   Author: Vaclav Vacek
-////////////////////////////
-
 #include "LalrTable.h"
 
-void LalrTable::print_item(std::pair<int, int> item)
+void LalrTable::print_item(const std::pair<int, int>& item)
 {
   unsigned iter;
   std::cerr << m_rules[item.first].first << " -> ";
@@ -267,8 +259,6 @@ void LalrTable::compute_ext_nont_first(void)
       }
     }
   }
-
-
   
   if(m_verbose_level >= 2)
   {
@@ -947,11 +937,11 @@ void LalrTable::make_lalr_table(void)
   
 }
 
-void LalrTable::load(std::multimap<int, std::vector<int> >& input)
+void LalrTable::load(const std::multimap<int, std::vector<int> >& input)
 {
   int rule_count = 0;
   std::vector<int> rhs;
-  std::multimap<int, std::vector<int> >::iterator i;
+  std::multimap<int, std::vector<int> >::const_iterator i;
 
   for(i = input.begin(); i != input.end(); i++)
   {
@@ -962,7 +952,7 @@ void LalrTable::load(std::multimap<int, std::vector<int> >& input)
   }
 }
 
-void LalrTable::print_table(std::string file_name)
+void LalrTable::print_table(const std::string& file_name)
 {
   std::set<int> used_terminals;
   std::set<int>::iterator set_iter;
@@ -1018,9 +1008,6 @@ void LalrTable::print_table(std::string file_name)
     
   
 }
-///////////////////////
-///////////////////////
-///////////////////////
 
 #ifdef LALRTABLE_TEST
 int main(void)
@@ -1120,3 +1107,4 @@ int main(void)
 }
 #endif
   
+// end of file

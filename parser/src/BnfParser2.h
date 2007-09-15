@@ -19,6 +19,7 @@
 
 #ifndef _BNFPARSER2_
 #define _BNFPARSER2_
+
 #include <string>
 
 class Parser;
@@ -66,4 +67,7 @@ public:
 
   ~BnfParser2(void);
 };
+
 #endif
+
+// end of file

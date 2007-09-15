@@ -18,24 +18,6 @@
  * $Id$
  */
 
-//
-///////////////
-//  AnyBnfLoad.h
-///////////////
-//  Contains the AnyBnfLoad class.
-//  This is the main grammar-file-loading class.
-//  First it loads the grammar and configuration file.
-//  Then it performs the preprocessing steps.
-//  Finally it adds the modified grammar into the table.
-//  
-///////////////
-//  Author: Vaclav Vacek
-///////////////
-
-
-/*
-
-*/
 #ifndef _ANYBNFLOAD_
 #define _ANYBNFLOAD_
 
@@ -54,6 +36,7 @@
 #include "pcrecpp.h"
 #include "AnyBnfFile.h"
 #include "AnyBnfConf.h"
+
 //!  This is the main grammar-file-loading class.
 /*  First it loads the grammar and configuration file.
  *  Then it performs the preprocessing steps.
@@ -144,7 +127,7 @@ private:
   std::multimap<int, std::vector<int> > m_global_table;
 
   //!Gives a list of positions of beginings of terminal substrings.
-  std::vector<int> find_term_pos(std::string data);
+  std::vector<int> find_term_pos(const std::string& data);
     
   //!Removes empty lines from the processed file.    
   void remove_empty(void);   
@@ -156,7 +139,7 @@ private:
   /** The line without the comment is written directly to the file, if the comment
    *  contains a dependency directive, it is stored.  
    */       
-  void process_line_comment(std::string m_line, int m_position);
+  void process_line_comment(const std::string& m_line, int m_position);
   
   //!Removes group comment of the specified position of the given string
   /** It reads consequent lines until the end_of_comment symbol is found.
@@ -265,6 +248,6 @@ public:
 
 };
 
-
 #endif  //_ANYBNFLOAD_
 
+// end of file
