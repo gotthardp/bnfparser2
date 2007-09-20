@@ -36,7 +36,7 @@ bool Parser::parse_word(const std::string& word)
 
   initial_state = m_gss.create_state(0, 0);
   if(word.length() > 0)
-    first_character = static_cast<int>(word[0]);
+    first_character = static_cast<int>(static_cast<unsigned char>(word[0]));
   else 
     first_character = -LalrTable::end_of_input;
 
@@ -53,12 +53,12 @@ bool Parser::parse_word(const std::string& word)
   for(i = 0; i <= word.size(); i++)
   {
     if(i < word.size())
-      a_i_1 = -static_cast<int>(word[i]);
+      a_i_1 = -static_cast<int>(static_cast<unsigned char>(word[i]));
     else
       a_i_1 = LalrTable::end_of_input;
       
     if(i < word.size() - 1)
-      a_i_2 = -static_cast<int>(word[i + 1]);
+      a_i_2 = -static_cast<int>(static_cast<unsigned char>(word[i + 1]));
     else
       a_i_2 = LalrTable::end_of_input;
       

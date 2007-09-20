@@ -562,12 +562,12 @@ void AnyBnfLoad::transform_strings(void)
         {
             read_char = tolower(read_char);
             stream_helper << m_config.get_base(7) << \
-              "%d" << static_cast<int>(read_char) << m_config.get_base(6) << \
-              "%d" << static_cast<int>(toupper(read_char)) << \
+              "%d" << static_cast<int>(static_cast<unsigned char>(read_char)) << m_config.get_base(6) << \
+              "%d" << static_cast<int>(static_cast<unsigned char>(toupper(read_char))) << \
               m_config.get_base(8);
         }
         else
-          stream_helper << "%d" << static_cast<int>(read_char) << ' ';
+          stream_helper << "%d" << static_cast<int>(static_cast<unsigned char>(read_char)) << ' ';
       }
     }
     m_grammar.insert_line(stream_helper.str());
@@ -1300,7 +1300,7 @@ void AnyBnfLoad::remove_unreachable (void)
       
   //inserting starting nonterminal
   right_side.push_back(m_start_nonterm_number);
-  m_global_table.insert(std::make_pair(0, right_side));
+  m_global_table.insert(std::make_pair(1, right_side));
   right_side.clear();
   
   for(unsigned k = 0; k < m_dependencies.size(); k++)
@@ -1368,7 +1368,7 @@ void AnyBnfLoad::remove_unreachable (void)
 
 
   //inicialization - insert start nonterm into pending
-  next_set.insert(0); 
+  next_set.insert(1); 
 
   //repeat until no new unprocessed nonterminals appear after one cycle
 
@@ -1390,7 +1390,7 @@ void AnyBnfLoad::remove_unreachable (void)
 
   //Now all the nonreachable rules are deleted
   bool nonterm_present;
-  for (int i=0; i!=m_nonterm_count; i++)//going through all the non-terminals
+  for (int i=1; i!=m_nonterm_count; i++)//going through all the non-terminals
   {
     //if a nonterminal is reachable
     if (processed_nonterm.find(i) != processed_nonterm.end())

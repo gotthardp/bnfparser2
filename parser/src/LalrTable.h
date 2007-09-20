@@ -123,12 +123,12 @@ private:
     //! returns true if the symbol on the position [index] is a terminal symbol
     bool is_terminal(unsigned index)
     {
-      return (m_data.at(index) < 0);
+      return (m_data.at(index) <= 0);
     }
     //! returns true if the symbol on the position [index] is a nonterminal symbol
     bool is_nonterminal(unsigned index)
     {
-      return (m_data.at(index) >= 0);
+      return (m_data.at(index) > 0);
     }
   
     //! constructor with one parameter - std::vector<int>

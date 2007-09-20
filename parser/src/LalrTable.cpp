@@ -391,7 +391,7 @@ void LalrTable::compute_lr0_items(void)
         items_map_iter = m_items_map.find(members_iter->second);
         if(items_map_iter != m_items_map.end())
         {
-          if(members_iter->first < 0)
+          if(members_iter->first <= 0) //is terminal
             m_go_to[current_state][- members_iter->first] = items_map_iter->second; //0-255 - terminals
           else
             m_go_to[current_state][members_iter->first + 256] = items_map_iter->second; //255+ - nonterminals
@@ -404,7 +404,7 @@ void LalrTable::compute_lr0_items(void)
           if(m_verbose_level >= 2)
             std::cerr << "goto2(" << current_state<<", " << members_iter->first << ") = " << state_count << std::endl;
       
-          if(members_iter->first < 0)
+          if(members_iter->first <= 0)
             m_go_to[current_state][- members_iter->first] = state_count; //0-255 - terminals
           else
             m_go_to[current_state][members_iter->first + 256] = state_count; //255+ - nonterminals
@@ -578,7 +578,7 @@ void LalrTable::compute_lookaheads()
       gotoitem_second = closure_iter->first.second + 1;
       symbol = (m_rules[closure_iter->first.first].second)[gotoitem_second - 1];
       
-      goto_index1 = m_go_to[state][(symbol < 0)?-symbol:symbol + 256];
+      goto_index1 = m_go_to[state][(symbol <= 0)?-symbol:symbol + 256];  //terminal or nonterminal?
   
       for(unsigned y = 0; y < m_ext_items[goto_index1].size(); y++)
         if(m_ext_items[goto_index1][y].rule_number == gotoitem_first &&

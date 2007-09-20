@@ -38,7 +38,7 @@ int main(int argc, char  *argv[])
   };
 
   char optc;
-  while(( optc = getopt_long( argc, argv, "de:h", long_options, NULL )) != -1 )
+  while(( optc = getopt_long( argc, argv, "d:e:h", long_options, NULL )) != -1 )
   {
     switch( optc )
     {
@@ -107,7 +107,11 @@ int main(int argc, char  *argv[])
 
   int errcount = 0;
 
-  while(!feof(stdin))
+  /* The std::cout contains machine readable information
+   * [test number] passed
+   * [test number] failed at position [position]
+   */
+  for(int caseno=1; !feof(stdin); caseno++)
   {
     std::string word;
     // read new word
@@ -116,20 +120,23 @@ int main(int argc, char  *argv[])
     while((ch = fgetc(stdin)) != EOF && ch != delimiter)
       word += ch;
 
+    std::cerr << "--------------------NEXT WORD--------------------" << std::endl;
     if(test.parse_word(word))
     {
       // print accepted word
-      std::cout << test.get_semantic_string() << std::endl;
+      std::cerr << test.get_semantic_string() << std::endl;
+      std::cout << "[" << caseno << "] passed" << std::endl;
     }
     else
     {
       errcount++;
-      // locate the error
-      std::cout << "Syntax error at position " << test.get_error_position() + 1 << std::endl;
-      std::cout <<word << std::endl;
+      // print the word
+      std::cerr <<word << std::endl;
       for(unsigned j = 0; j < test.get_error_position(); j++)
-        std::cout << '-';
-      std::cout  << '^' << std::endl;
+        std::cerr << '-';
+      std::cerr  << '^' << std::endl;
+      // locate the error
+      std::cout << "[" << caseno << "] failed at position " << test.get_error_position() + 1 << std::endl;
     }
   }
 

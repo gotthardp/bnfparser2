@@ -114,6 +114,7 @@ private:
   std::vector<std::string> m_grammar_names;
 
   //!Counts nonterminals continuosly (is not reset to 0 after finishing one grammar).
+  //!Actually it is one number higher than the real count of the nonterminals
   int m_nonterm_count;
 
   //!Stores the number of the rules.
@@ -243,7 +244,7 @@ public:
 
   //!Constructor takes the verbose level.
   AnyBnfLoad(unsigned verbose = 0)
-  :m_verbose_level(verbose), m_start_set(false), m_nonterm_count(1)
+  :m_verbose_level(verbose), m_start_set(false), m_nonterm_count(2)
   {}
 
 };

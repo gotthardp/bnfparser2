@@ -1,0 +1,14 @@
+#!/bin/bash
+# combine test-cases into one file, separated by '\xEE'
+# usage: makewords FILE DIR
+
+for i in `ls $2`;
+do
+  if [ -s $1 ]; then
+    # file is not empty, add delimiter
+    echo -ne '\0356' >> $1
+  fi
+  cat $2/$i >> $1
+done    
+
+# end of file
