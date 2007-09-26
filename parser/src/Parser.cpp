@@ -27,7 +27,7 @@ bool Parser::parse_word(const std::string& word)
   unsigned i;
   int a_i_1, a_i_2;
 
-  std::set<LalrTable::action>::iterator actions;
+  std::set<LalrTable::action>::const_iterator actions;
   
   std::vector<GSS::StateIdent> accepting_states;
   m_gss.reset(word.length());
@@ -99,7 +99,7 @@ bool Parser::parse_word(const std::string& word)
 
 void Parser::shifter(unsigned i, int a_i_plus_1, int a_i_plus_2)
 {
-  std::set<LalrTable::action>::iterator actions;
+  std::set<LalrTable::action>::const_iterator actions;
   
   std::set<QMember> temp_q;
   std::set<QMember>::iterator q_iter;
@@ -212,7 +212,7 @@ void Parser::shifter(unsigned i, int a_i_plus_1, int a_i_plus_2)
 
 void Parser::reducer(unsigned i, int a_i_plus_1)
 {
-  std::set<LalrTable::action>::iterator actions;
+  std::set<LalrTable::action>::const_iterator actions;
 
   RMember* now_processed;
   std::vector<std::pair<GSS::StateIdent, std::string > > chi;

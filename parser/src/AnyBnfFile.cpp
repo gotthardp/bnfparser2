@@ -39,7 +39,7 @@ void AnyBnfFile::load_file(const std::string& name)
   if(!m_input)
     throw std::runtime_error("Invalid input file");
     
-  m_output.open(m_temp1.c_str(), std::ios::out | std::ios::binary);
+  m_output.open(m_temp1, std::ios::out | std::ios::binary);
   if(!m_output)
     throw std::runtime_error("Temporary file not created");
   
@@ -50,11 +50,11 @@ void AnyBnfFile::load_file(const std::string& name)
   m_input.close();
   m_output.close();
 
-  m_input.open(m_temp1.c_str(), std::ios::in);
+  m_input.open(m_temp1, std::ios::in);
   if(!m_input)
     throw std::runtime_error("File error");
 
-  m_output.open(m_temp2.c_str(), std::ios::out);
+  m_output.open(m_temp2, std::ios::out);
   if(!m_output)
     throw std::runtime_error("Temporary file not created");
   
@@ -108,13 +108,13 @@ void AnyBnfFile::swap(void)
     
   if(m_rw_state)
   {
-    m_input.open(m_temp1.c_str(), std::ios::in);
-    m_output.open(m_temp2.c_str(), std::ios::out);
+    m_input.open(m_temp1, std::ios::in);
+    m_output.open(m_temp2, std::ios::out);
   }
   else
   {
-    m_input.open(m_temp2.c_str(), std::ios::in);
-    m_output.open(m_temp1.c_str(), std::ios::out);
+    m_input.open(m_temp2, std::ios::in);
+    m_output.open(m_temp1, std::ios::out);
   }
   if(!m_input || !m_output)
     throw std::runtime_error("File error");
@@ -137,9 +137,9 @@ void AnyBnfFile::write_back(void)
 
 
   if(m_rw_state)
-    m_input.open(m_temp1.c_str(), std::ios::in | std::ios::binary);
+    m_input.open(m_temp1, std::ios::in | std::ios::binary);
   else
-    m_input.open(m_temp2.c_str(), std::ios::in | std::ios::binary);
+    m_input.open(m_temp2, std::ios::in | std::ios::binary);
 
   if(!m_input || !m_output)
     throw std::runtime_error("File error");

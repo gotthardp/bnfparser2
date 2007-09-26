@@ -12,10 +12,10 @@ The following software need to be installed
 
 Configure and build the library by executing
 
-automake
+autoconf
 ./configure --prefix=/usr/local
-make
-make install
+gmake
+gmake install
 
 Assuming the software was installed with the /usr/local prefix,
 the following environment variables have to be set

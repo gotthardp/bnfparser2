@@ -26,7 +26,7 @@ std::string AnyBnfConf::extract(void)
   if(!m_conf_loaded)
     throw std::runtime_error("File error - file not loaded");
   
-  if(m_conf_file)
+  if(m_conf_file.good())
     m_conf_file.getline(read_buffer, m_max_line_length);
   
   
@@ -49,7 +49,7 @@ std::string AnyBnfConf::extract(void)
 
 bool AnyBnfConf::check_operator(void)
 {
-  if(m_conf_file)
+  if(m_conf_file.good())
     m_conf_file.getline(read_buffer, m_max_line_length);
   if (std::string(read_buffer).find("OPERATORS",0)==0) 
   {
@@ -218,11 +218,11 @@ void AnyBnfConf::check_conf(void)
       case 13 : m_output << (csname)<<std::endl; break;
     }   
   }
-  int i=0;
+  int j=0;
   if (!m_operators.empty())
-    while (i<m_operators_max)
+    while (j<m_operators_max)
     {
-      m_output << m_operators[i]<<std::endl; i++;
+      m_output << m_operators[j]<<std::endl; j++;
     }
   m_output.close(); 
 }

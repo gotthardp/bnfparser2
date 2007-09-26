@@ -17,6 +17,11 @@ else
     CPPFLAGS="-O3 $CPPFLAGS"
 fi
 
+test "x$prefix" = xNONE && prefix=$ac_default_prefix
+test "x$exec_prefix" = xNONE && exec_prefix='${prefix}'
+includedir=`eval echo $includedir`
+libdir=`eval echo $libdir`
+
 # Checks for programs.
 AC_PROG_CXX
 AC_PROG_CC
@@ -24,11 +29,14 @@ AC_PROG_MAKE_SET
 
 AC_LANG(C++)
 
+CPPFLAGS="$CPPFLAGS -I`eval echo $includedir`"
+LIBS="$LIBS -L`eval echo $libdir`"
+
 # Checks for libraries.
 
 # Check for the pcrecpp library.
 AC_CACHE_CHECK([for pcrecpp library], [ac_have_pcrecpp],[
-    LIBS="-lpcrecpp $LIBS"
+    LIBS="$LIBS -lpcrecpp"
     AC_LINK_IFELSE(AC_LANG_PROGRAM([
         #include <pcrecpp.h>
     ],[
@@ -51,6 +59,7 @@ AC_C_INLINE
 
 # Checks for library functions.
 AC_CHECK_FUNCS([strchr strtol])
+AC_CHECK_FUNCS([mkstemp])
 
 AC_CONFIG_FILES([Makefile doc/Makefile src/Makefile share/Makefile])
 AC_OUTPUT

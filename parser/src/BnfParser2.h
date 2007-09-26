@@ -24,12 +24,18 @@
 
 class Parser;
 
+#ifdef _WIN32
+#define BNFPARSER2_EXP_DEFN __declspec(dllimport)
+#else
+#define BNFPARSER2_EXP_DEFN /* empty */
+#endif
+
 /** \brief The class providing the interface to the parser.
  *  The parser is encapsulated in order that it may be used
  *  as a library.
  *
  */
-class BnfParser2
+class BNFPARSER2_EXP_DEFN BnfParser2
 {
   //! The class containing the implementation of the parser
   Parser *m_core_parser;

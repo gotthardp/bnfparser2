@@ -22,7 +22,7 @@ all clean distclean install:
 	@for subdir in $(subdirectories); \
 	do \
 	echo "Entering $$subdir"; \
-	$(MAKE) --no-print-directory -C $$subdir $@ || break; \
+	cd $$subdir; $(MAKE) --no-print-directory $@ || break; cd ..; \
 	done
 
 distclean: clean _distclean

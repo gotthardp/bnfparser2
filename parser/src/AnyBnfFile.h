@@ -28,8 +28,9 @@
 #include <fstream>
 #include <string>
 #include <stdexcept>
-
 #include <cstdlib>
+
+#include "config.h"
 
 //!  It's used for iterative text-file editing.
 /*  That means reading a line and inserting a set of lines
@@ -47,9 +48,8 @@ private:
   static const int m_max_line_length = 4096;   //!<max input-file line length
   bool m_rw_state;        //!<false = temp1 - read, temp2 - write; true = v. v.
   
-  std::string m_temp_dir; //!< The unique name of the temporary directory
-  std::string m_temp1; //!< The name of the first temporary file
-  std::string m_temp2; //!< The name of the second temporary file
+  char m_temp1[128]; //!< The name of the first temporary file
+  char m_temp2[128]; //!< The name of the second temporary file
   
   //! false = something has been already written to the file; true = the first entry will be written
   bool m_first_entry;     
@@ -110,13 +110,32 @@ public:
   AnyBnfFile(void):m_rw_state(false),m_first_entry(true),m_file_loaded(false),
   m_temp1_created(false), m_temp2_created(false)
   {
-    char templ[] = P_tmpdir "/parser_XXXXXX";
-    if(mkdtemp(templ) == NULL)
-      throw std::runtime_error("Temporary directory not created");
-
-    m_temp_dir = templ;
-    m_temp1 = m_temp_dir + "/temp1";
-    m_temp2 = m_temp_dir + "/temp2";
+    const char *tmpdir_s;
+    if((tmpdir_s = getenv("TMPDIR")) == NULL &&
+      (tmpdir_s = getenv("TMP")) == NULL &&
+      (tmpdir_s = getenv("TEMP")) == NULL)
+#ifdef _WIN32
+      tmpdir_s = ".";
+#else
+      tmpdir_s = "/tmp";
+#endif
+    strncpy(m_temp1, tmpdir_s, sizeof(m_temp1)-1);
+    strncpy(m_temp2, tmpdir_s, sizeof(m_temp2)-1);
+    strncat(m_temp1, "/parser_XXXXXX", sizeof(m_temp1)-strlen(m_temp1)-1);
+    strncat(m_temp2, "/parser_XXXXXX", sizeof(m_temp2)-strlen(m_temp2)-1);
+#ifdef HAVE_MKSTEMP
+    int fd = -1;
+    // create and close temporary files
+    if(((fd = mkstemp(m_temp1)) == -1 || close(fd) != 0) ||
+      ((fd = mkstemp(m_temp2)) == -1 || close(fd) != 0))
+#else
+    // create temporary files
+    if(mktemp(m_temp1) == NULL || mktemp(m_temp2) == NULL)
+#endif
+    {
+      std::cerr << "Cannot create " << m_temp1 << " and " << m_temp2 << std::endl;
+      throw std::runtime_error("Temporary files cannot be created");
+    }
   }
   ~AnyBnfFile()
   {
@@ -126,10 +145,9 @@ public:
       m_output.close();
     }
     if(m_temp1_created)
-      remove(m_temp1.c_str());
+      remove(m_temp1);
     if(m_temp2_created)
-      remove(m_temp2.c_str());
-    rmdir(m_temp_dir.c_str());
+      remove(m_temp2);
   }
 };
 

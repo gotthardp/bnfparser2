@@ -28,6 +28,7 @@ CXX = @CXX@
 DEFS = @DEFS@
 CPPFLAGS = -ansi -Wall @CPPFLAGS@
 LIBS = @LIBS@
+# note: if you want to use gprof, append "-pg" to CPPFLAGS and LIBS
 
 TARGET = libBnfParser2.so.0
 TARGET_OBJS = LalrTable.o GSS.o Parser.o AnyBnfLoad.o AnyBnfConf.o AnyBnfFile.o BnfParser2.o
@@ -44,9 +45,10 @@ $(TARGET): .depend $(TARGET_OBJS)
 	$(CXX) -shared -Wl,-soname,$(TARGET) $(TARGET_OBJS) -o $@; \
 	ln -sf $@ libBnfParser2.so
 
-$(TEST): $(TARGET) $(TEST_OBJS)
+# the test tool is linked statically to simplify profiling (gprof)
+$(TEST): $(TARGET_OBJS) $(TEST_OBJS)
 	@echo "  LD $(@F)"; \
-	$(CXX) $(LDFLAGS) -L. $(TEST_OBJS) $(LIBS) -lBnfParser2 -o $@;
+	$(CXX) $(LDFLAGS) -L. $(TARGET_OBJS) $(TEST_OBJS) $(LIBS) -o $@;
 
 %.o: %.cpp
 	@echo "  CXX $<"; \

@@ -17,11 +17,15 @@
  * $Id$
  */
 
-#include <getopt.h>
 #include <string>
 #include <iostream>
-#include "BnfParser2.h"
+#ifdef _WIN32
+#include "getopt_long.h"
+#else
+#include <getopt.h>
+#endif
 
+#include "BnfParser2.h"
 #include "config.h"
 
 int main(int argc, char  *argv[])

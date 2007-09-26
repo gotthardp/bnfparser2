@@ -628,6 +628,10 @@ void AnyBnfLoad::transform_names(void)
           break;
         case 'd':
           base = 10;
+          break;
+        default:
+          // this will never happen, see term_range
+          throw std::runtime_error("Unexpected base indicator");
       }
       leftb = strtol(leftbound.c_str(), &err, base);
       rightb = strtol(rightbound.c_str(), &err, base);
