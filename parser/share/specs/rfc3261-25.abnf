@@ -10,6 +10,7 @@
 ;
 ; 25 Augmented BNF for the SIP Protocol
 
+; !syntax("abnf")
 ; !import("ALPHA", "CRLF", "DIGIT", "DQUOTE", "HEXDIG", "HTAB", "OCTET", "SP", "WSP", "rfc2234-6.1.abnf")
 ; !import("telephone-subscriber", "rfc2806-2.abnf")
 

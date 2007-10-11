@@ -9,6 +9,8 @@
 ;
 ; 4. ABNF DEFINITION OF ABNF
 
+; !syntax("abnf")
+
         rulelist       =  1*( rule / (*c-wsp c-nl) )
 
         rule           =  rulename defined-as elements c-nl
