@@ -2,11 +2,11 @@
  * bnfparser2 - Generic BNF-adaptable parser
  * http://bnfparser2.sourceforge.net
  *
- *      This library is free software; you can redistribute it and/or
+ *      This program is free software; you can redistribute it and/or
  *      modify it under the terms of the GNU Lesser General Public
  *      License version 2.1, as published by the Free Software Foundation.
  *
- *      This library is distributed in the hope that it will be useful,
+ *      This program is distributed in the hope that it will be useful,
  *      but WITHOUT ANY WARRANTY; without even the implied warranty of
  *      MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  *      Lesser General Public License for more details.
@@ -19,93 +19,156 @@
 
 #include <string>
 #include <iostream>
-#ifdef _WIN32
-#include "getopt_long.h"
-#else
-#include <getopt.h>
-#endif
+
+#include <SimpleOpt.h>
 
 #include "BnfParser2.h"
 #include "config.h"
 
 int main(int argc, char  *argv[])
 {
-  int debug_level = 0;
-  int delimiter = '\n';
+  // instantiate the parser
+  BnfParser2 test;
 
-  static struct option const long_options[] =
+  int delimiter = '\n';
+  bool automatic_includes = true;
+#ifdef DATADIR
+  test.add_search_path(DATADIR);
+#endif
+
+  enum
   {
-    { "debug", required_argument, NULL, 'd' },
-    { "delimiter", required_argument, NULL, 'e' },
-    { "help", no_argument, NULL, 'h' },
-    { NULL, 0, NULL, 0 }
+    OPT_DIRECTORY,
+    OPT_DELIMITER,
+    OPT_MANUAL_INCLUDES,
+    OPT_VERBOSE,
+    OPT_HELP
   };
 
-  char optc;
-  while(( optc = getopt_long( argc, argv, "d:e:h", long_options, NULL )) != -1 )
+  static CSimpleOpt::SOption const long_options[] =
   {
-    switch( optc )
+    { OPT_DIRECTORY, "-d", SO_REQ_SEP },
+    { OPT_DELIMITER, "-e", SO_REQ_SEP },
+    { OPT_DELIMITER, "--delimiter", SO_REQ_CMB },
+    { OPT_MANUAL_INCLUDES, "--manual-includes", SO_NONE },
+    { OPT_VERBOSE, "-v", SO_REQ_SEP },
+    { OPT_VERBOSE, "--verbose", SO_REQ_CMB },
+    { OPT_HELP, "--help", SO_NONE },
+    SO_END_OF_OPTIONS
+  };
+
+  int fileind = 0;
+  CSimpleOpt args(argc, argv, long_options);
+
+  while(args.Next())
+  {
+    if(args.LastError() != SO_SUCCESS)
     {
-      case 'd':
-        debug_level = atol(optarg);
+      printf( "Usage: %s [OPTION]... SYMBOL ([:[VARIANT]] SYNTAX)...\n", argv[0] );
+      fprintf( stderr, "Try '%s --help' for more information.\n", argv[0] );
+      exit(1);
+    }
+
+    switch(args.OptionId())
+    {
+      case OPT_DIRECTORY:
+        test.add_search_path(args.OptionArg());
         break;
-      case 'h':
+      case OPT_DELIMITER:
+        delimiter = atol(args.OptionArg());
+        break;
+      case OPT_MANUAL_INCLUDES:
+        automatic_includes = false;
+        break;
+      case OPT_VERBOSE:
+        test.set_verbose_level( atol(args.OptionArg()) );
+        break;
+
+      case OPT_HELP:
         printf(
-"Usage: %s [OPTION]... SYMBOL ([:VARIANT] SYNTAX)...\n"
+"Usage: %s [OPTION]... SYMBOL ([:[VARIANT]] SYNTAX)...\n"
 "Check input against a BNF syntax specification.\n"
 "\n"
-"  -d LEVEL, --debug=LEVEL   set debug to LEVEL (default %i)\n"
+"  -d DIR                    search specifications in the directory DIR\n"
 "  -e NUM, --delimiter=NUM   set word delimiter to NUM (default %i in ASCII)\n"
+"  --manual-includes         do not automatically load referenced grammars\n"
+"  -v LEVEL, --verbose=LEVEL set verbosity to LEVEL (default %i)\n"
 "  --help                    display this help and exit\n"
 "\n"
 "Report bugs to <"PACKAGE_BUGREPORT">.\n",
-          argv[0], debug_level, delimiter
+          argv[0], delimiter, test.get_verbose_level()
         );
         exit(0);
-      case 'e':
-        delimiter = atol(optarg);
-        break;
-
-      default:
-        printf( "Usage: %s [OPTION]... SYMBOL ([:VARIANT] SYNTAX)...\n", argv[0] );
-        fprintf( stderr, "Try '%s --help' for more information.\n", argv[0] );
-        exit(1);
     }
   }
 
-  BnfParser2 test(debug_level);
-
-  if(argc-optind < 3)
+  if(fileind+2 > args.FileCount())
   {
     std::cerr << argv[0] << ": too few parameters" << std::endl;
     std::cerr << "Try `" << argv[0] << " --help' for more information." << std::endl;
     return 1;
   }
 
-  const char* symbol = argv[optind++];
-  const char* variant = NULL;
+  const char* symbol = args.File(fileind++);
 
-  const char* param = argv[optind++];
-  if(*param == ':')
-    variant = param+1;
-  else
+  const char* variant = NULL;
+  const char* last_variant = NULL;
+  bool use_last_variant = false;
+
+  const char* param = args.File(fileind++);
+  if(param[0] == ':')
   {
-    std::cerr << argv[0] << ": missing variant specification" << std::endl;
-    exit(1);
+    // first VARIANT cannot say use_last_variant
+    if(param[1] == '\0')
+    {
+      std::cerr << argv[0] << ": missing variant specification" << std::endl;
+      exit(1);
+    }
+    else
+      variant = param+1;
+
+    if(fileind+1 > args.FileCount())
+    {
+      std::cerr << argv[0] << ": expecting specification name" << std::endl;
+      std::cerr << "Try `" << argv[0] << " --help' for more information." << std::endl;
+      return 1;
+    }
+    // load SYNTAX parameter
+    param = args.File(fileind++);
   }
 
   // load start grammar
-  const char* syntax = argv[optind++];
-  test.set_start_nonterm(symbol, syntax);
-  test.add_grammar(syntax, variant);
+  test.set_start_nonterm(symbol, param);
+  test.add_grammar(param, variant);
   // load next grammars
-  while (optind < argc)
+  while(fileind > args.FileCount())
   {
-    if(*(param = argv[optind++]) == ':')
-      variant = param+1;
+    if(*(param = args.File(fileind++)) == ':')
+    {
+      if(param[1] == '\0')
+        use_last_variant = true;
+      else
+      {
+        variant = param+1;
+        use_last_variant = false;
+      }
+    }
     else
+    {
+      if(use_last_variant)
+        variant = last_variant;
+      else
+        last_variant = variant; // store for further use
+
       test.add_grammar(param, variant);
+
+      use_last_variant = false;
+      variant = NULL;
+    }
   }
+
+  if(automatic_includes)
+    test.add_referenced_grammars();
 
   test.build_parser();
 

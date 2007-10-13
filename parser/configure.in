@@ -51,6 +51,8 @@ AC_CACHE_CHECK([for pcrecpp library], [ac_have_pcrecpp],[
 ])
 
 # Checks for header files.
+AC_CHECK_HEADER([SimpleOpt.h],[],
+    AC_MSG_ERROR([The SimpleOpt.h templates are required. Try 'http://code.jellycan.com/simpleopt'.]))
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_HEADER_STDBOOL

@@ -32,9 +32,6 @@
  */  
 class LalrTable
 {
-  //! The amount of information written to std::cerr
-  unsigned m_verbose_level; 
-  
   /** \brief The structure used for storing LR(1) items together with the information
    *         about propagating the lookaheads.
    *   
@@ -109,7 +106,7 @@ private:
     }
 
     //! returns the size of the encapsulated vector
-    unsigned size(void)
+    size_t size(void)
     {
       return m_data.size();
     }
@@ -246,8 +243,8 @@ private:
 public:
   //! \brief The constructor takes the number of the nonterminals and allocates memory 
   //!        needed for processing the grammar
-  LalrTable(unsigned _nonterm_count, unsigned _verbose = 0)
-  : m_verbose_level(_verbose), m_nonterm_count(_nonterm_count)
+  LalrTable(unsigned _nonterm_count)
+  : m_nonterm_count(_nonterm_count)
   {
     m_firsts.resize(_nonterm_count);
     m_nont_firsts.resize(_nonterm_count);
@@ -289,7 +286,7 @@ public:
   }
 
   //! Returns the length of the rule
-  unsigned get_rule_length(unsigned rulenumber)
+  size_t get_rule_length(unsigned rulenumber)
   {
     return m_rules.at(rulenumber).second.size();
   }
@@ -304,18 +301,6 @@ public:
   int get_symbol(unsigned rulenumber, unsigned token)
   {
     return m_rules.at(rulenumber).second.at(token);
-  }
-
-  //! Returns the value of #m_verbose_level
-  unsigned get_verbose_level(void)
-  { 
-    return m_verbose_level;
-  }
-
-  //! Sets the value of #m_verbose_level
-  void set_verbose_level(unsigned vl)
-  {
-    m_verbose_level = vl;
   }
 };
 

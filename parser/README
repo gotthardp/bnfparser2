@@ -4,21 +4,26 @@ Part A. User Instructions
   bnfcheck - A universal syntax validation utility.
     See man bnfcheck(1).
 
+If you need support, please check http://bnfparser2.sourceforge.net, or
+contact <bnfparser2-users@lists.sourceforge.net>.
+
+
 A.1. Build instructions
 ----------------------------
 
 The following software need to be installed
  - pcrecpp library (http://www.pcre.org)
+ - SimpleOpt library (http://code.jellycan.com/simpleopt)
 
 Configure and build the library by executing
+  autoconf
+  ./configure --prefix=/usr/local
+  gmake
+  gmake install
 
-autoconf
-./configure --prefix=/usr/local
-gmake
-gmake install
 
-Assuming the software was installed with the /usr/local prefix,
-the following environment variables have to be set
+Assuming the software was installed with the /usr/local prefix, the following
+environment variables have to be set
   PATH=... :/usr/local/bin
   LD_LIBRARY=... :/usr/local/lib
   MANPATH=... :/usr/local/share/man
@@ -27,7 +32,10 @@ the following environment variables have to be set
 Part B. Developer Instructions
 ==============================
 
-TODO
+#include <BnfParser2.h>
+
+If you need support, please check http://bnfparser2.sourceforge.net, or
+contact <bnfparser2-devel@lists.sourceforge.net>.
 
 
 $Id$

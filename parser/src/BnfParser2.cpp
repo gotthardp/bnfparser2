@@ -17,8 +17,63 @@
  * $Id$
  */
 
-#include "BnfParser2.h"
+#include "Debug.h"
 #include "Parser.h"
+
+#ifndef BNFPARSER2_EXP_DEFN
+#ifdef _WIN32
+#define BNFPARSER2_EXP_DEFN __declspec(dllexport)
+#else
+#define BNFPARSER2_EXP_DEFN /* empty */
+#endif
+#endif
+
+#include "BnfParser2.h"
+
+BnfParser2::BnfParser2(void)
+{
+  m_core_parser = new Parser();
+}
+
+BnfParser2::~BnfParser2(void)
+{
+  delete m_core_parser;
+}
+
+void BnfParser2::add_search_path(const char *path)
+{
+  m_core_parser->add_search_path(path);
+}
+
+void BnfParser2::add_grammar(const char *syntax_name, const char *variant_name)
+{
+  m_core_parser->add_grammar(syntax_name, variant_name);
+}
+
+void BnfParser2::add_referenced_grammars()
+{
+  m_core_parser->add_referenced_grammars();
+}
+
+void BnfParser2::set_start_nonterm(const std::string& start_name, const std::string& start_grammar_name)
+{
+  m_core_parser->set_start_nonterm(start_name, start_grammar_name);
+}
+
+void BnfParser2::build_parser(void)
+{
+  m_core_parser->build_parser();
+}
+
+int BnfParser2::get_verbose_level(void)
+{
+  return logCurrentLevel;
+}
+
+void BnfParser2::set_verbose_level(unsigned level)
+{
+  logSetLevel(level);
+}
 
 bool BnfParser2::parse_word(const std::string& word)
 {
@@ -38,31 +93,6 @@ unsigned BnfParser2::get_error_position(void)
 std::string BnfParser2::get_semantic_string(void)
 {
   return m_core_parser->get_semantic_string();
-}
-
-void BnfParser2::set_start_nonterm(const std::string& start_name, const std::string& start_grammar_name)
-{
-  m_core_parser->set_start_nonterm(start_name, start_grammar_name);
-}
-
-void BnfParser2::add_grammar(const std::string& g_name, const std::string& c_name)
-{
-  m_core_parser->add_grammar(g_name, c_name);
-}
-
-void BnfParser2::build_parser(void)
-{
-  m_core_parser->build_parser();
-}
-
-BnfParser2::BnfParser2(unsigned verbose)
-{
-  m_core_parser = new Parser(verbose);
-}
-
-BnfParser2::~BnfParser2(void)
-{
-  delete m_core_parser;
 }
 
 // end of file

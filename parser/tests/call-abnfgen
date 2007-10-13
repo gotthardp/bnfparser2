@@ -11,7 +11,7 @@ makewords $TMPDIR $TESTFILE
 rm -rf $TMPDIR
 
 # execute the parser
-../bnfcheck -d 1 -e 0 $1 :../share/conf/abnf.conf $2 < $TESTFILE
+../bnfcheck -v 6 -e 0 $1 $2 < $TESTFILE
 
 RETCODE=$?
 if [ $RETCODE != 0 ]; then

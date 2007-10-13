@@ -27,4 +27,4 @@ all clean distclean:
 
 install:
 	mkdir -p $(installdir)
-	cp -rpf conf specs $(installdir)
+	cp -rpf *.abnf syntax $(installdir)

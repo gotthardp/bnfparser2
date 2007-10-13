@@ -17,6 +17,7 @@
  * $Id$
  */
 
+#include "Debug.h"
 #include "LalrTable.h"
 
 void LalrTable::print_item(const std::pair<int, int>& item)
@@ -60,8 +61,7 @@ void LalrTable::compute_first(void)
           { 
             m_firsts[(m_rules[i].first)].insert((m_rules[i].second).at(j));
             change = true;
-            if(m_verbose_level >= 2)
-              std::cerr << (m_rules[i].first) << " <--term-- " << (m_rules[i].second).at(j)<<std::endl;
+            logTrace(LOG_DEBUG, (m_rules[i].first) << " <--term-- " << (m_rules[i].second).at(j));
           }
           break;   //after this we do not have to continue with this rule
         }
@@ -77,8 +77,7 @@ void LalrTable::compute_first(void)
           { 
             m_firsts[(m_rules[i].first)].insert(*k);
             change = true;
-            if(m_verbose_level >= 2)
-              std::cerr << (m_rules[i].first) << " <--nont-- " << *k <<std::endl;
+            logTrace(LOG_DEBUG, (m_rules[i].first) << " <--nont-- " << *k);
           }
         }
         //if epsilon was not present in the current nonterm's first set,
@@ -95,8 +94,7 @@ void LalrTable::compute_first(void)
         { 
           m_firsts[(m_rules[i].first)].insert(epsilon);
           change = true;
-          if(m_verbose_level >= 2)
-            std::cerr << (m_rules[i].first) << " <--epsi-- " << epsilon <<std::endl;
+          logTrace(LOG_DEBUG, (m_rules[i].first) << " <--epsi-- " << epsilon);
         }
       }
     }
@@ -134,8 +132,7 @@ void LalrTable::compute_nont_first(void)
           { 
             m_nont_firsts[(m_rules[i].first)].insert(*k);
             change = true;
-            if(m_verbose_level >= 2)
-              std::cerr << (m_rules[i].first) << " <---- " << *k <<std::endl;
+            logTrace(LOG_DEBUG, (m_rules[i].first) << " <---- " << *k);
           }
         }
         //as the rightmost derivation is
@@ -260,11 +257,11 @@ void LalrTable::compute_ext_nont_first(void)
     }
   }
   
-  if(m_verbose_level >= 2)
+  if(logIsEnabledFor(LOG_DEBUG))
   {
     for(i = 0; i < m_nonterm_count; i++)
     {
-      std::cerr << "----ext_nont_first for " << i << std::endl;
+      logTrace(LOG_DEBUG, "----ext_nont_first for " << i);
       for(k = m_ext_nont_firsts[i].begin(); k != m_ext_nont_firsts[i].end(); k++)
       {
         std::cerr << k->first << ": ";
@@ -297,8 +294,7 @@ void LalrTable::compute_neps_first(void)
           { 
             m_neps_firsts[(m_rules[i].first)].insert((m_rules[i].second).at(j));
             change = true;
-            if(m_verbose_level >= 2)
-              std::cerr << (m_rules[i].first) << " <--term-- " << (m_rules[i].second).at(j)<<std::endl;
+            logTrace(LOG_DEBUG, (m_rules[i].first) << " <--term-- " << (m_rules[i].second).at(j));
           }
           break;   //after this we do not have to continue with this rule
         }
@@ -313,8 +309,7 @@ void LalrTable::compute_neps_first(void)
           { 
             m_neps_firsts[(m_rules[i].first)].insert(*k);
             change = true;
-            if(m_verbose_level >= 2)
-              std::cerr << (m_rules[i].first) << " <--nont-- " << *k <<std::endl;
+            logTrace(LOG_DEBUG, (m_rules[i].first) << " <--nont-- " << *k);
           }
         }
          //always break - no other item can be added without epsilon rule       
@@ -352,11 +347,8 @@ void LalrTable::compute_lr0_items(void)
   
   while(current_state != state_count)
   {
-    if(m_verbose_level >= 2)
-    {
-      std::cerr << "current_state: "<< current_state << std::endl;
-      std::cerr << "state_count:   "<< state_count << std::endl;
-    }
+    logTrace(LOG_DEBUG, "current_state: "<< current_state);
+    logTrace(LOG_DEBUG, "state_count:   "<< state_count);
   
     members.clear();
     for(l = m_items[current_state].begin(); l != m_items[current_state].end(); l++)
@@ -395,14 +387,13 @@ void LalrTable::compute_lr0_items(void)
             m_go_to[current_state][- members_iter->first] = items_map_iter->second; //0-255 - terminals
           else
             m_go_to[current_state][members_iter->first + 256] = items_map_iter->second; //255+ - nonterminals
-          if(m_verbose_level >= 2)
-            std::cerr << "goto1(" << current_state<<", " << members_iter->first << ") = "
-                      << items_map_iter->second << std::endl;
+
+          logTrace(LOG_DEBUG, "goto1(" << current_state<<", " << members_iter->first << ") = "
+            << items_map_iter->second);
         }
         else
         {
-          if(m_verbose_level >= 2)
-            std::cerr << "goto2(" << current_state<<", " << members_iter->first << ") = " << state_count << std::endl;
+          logTrace(LOG_DEBUG, "goto2(" << current_state<<", " << members_iter->first << ") = " << state_count);
       
           if(members_iter->first <= 0)
             m_go_to[current_state][- members_iter->first] = state_count; //0-255 - terminals
@@ -691,12 +682,10 @@ void LalrTable::build_table(void)
           help_action.reduce_by = -1;
           help_action.reduce_by = -1;
           m_table[i][- dot_symbol].insert(help_action);
-          if(m_verbose_level >= 2)
-          {
-            std::cerr << "State " << i << ", symbol "
+
+          logTrace(LOG_DEBUG, "State " << i << ", symbol "
              << static_cast<char>(- dot_symbol)
-             << ", shift " << help_action.next_state << std::endl;
-          }
+             << ", shift " << help_action.next_state);
         }
         else
         {
@@ -707,12 +696,10 @@ void LalrTable::build_table(void)
             help_action.reduce_by = -1;
             help_action.reduce_by = -1;
             m_table[i][-(*k)].insert(help_action);
-            if(m_verbose_level >= 2)
-            {
-              std::cerr << "State " << i << ", symbol "
+
+            logTrace(LOG_DEBUG, "State " << i << ", symbol "
                << static_cast<char>(- (*k))
-               << ", shift " << help_action.next_state << std::endl;
-            }
+               << ", shift " << help_action.next_state);
           }
         }
       }
@@ -749,12 +736,10 @@ void LalrTable::build_table(void)
             k++)
         {
           m_table[i][-(*k)].insert(help_action);
-          if(m_verbose_level >= 2)
-          {
-            std::cerr << "State " << i << ", symbol "
+
+          logTrace(LOG_DEBUG, "State " << i << ", symbol "
              << static_cast<char>(- (*k))
-             << ", reduce by " << help_action.reduce_by<<", length: " << help_action.reduce_length << std::endl;
-          }
+             << ", reduce by " << help_action.reduce_by<<", length: " << help_action.reduce_length);
         }
       }
     
@@ -813,13 +798,10 @@ void LalrTable::build_table(void)
                 k++)
             {
               m_table[i][-(*k)].insert(help_action);
-              if(m_verbose_level >= 2)
-              {
-                std::cerr << "State " << i << ", symbol "
+
+              logTrace(LOG_DEBUG, "State " << i << ", symbol "
                  << static_cast<char>(- (*k))
-                 << ", reduce by epsilon " << help_action.reduce_by << std::endl;
-              }
-              
+                 << ", reduce by epsilon " << help_action.reduce_by);
             }
 
             
@@ -849,39 +831,31 @@ bool operator<(const LalrTable::action& a1, const LalrTable::action& a2)
 
 void LalrTable::make_lalr_table(void)
 {
-  if(m_verbose_level >= 1)
-    std::cerr << "## LALR table computing start##" << std::endl;
+  logTrace(LOG_INFO, "## LALR table computing start##");
 
-  if(m_verbose_level >= 1)
-    std::cerr << "  computing first" << std::endl;
+  logTrace(LOG_INFO, "  computing first");
   compute_first();
   
-  if(m_verbose_level >= 1)
-    std::cerr << "  computing nont_first" << std::endl;
+  logTrace(LOG_INFO, "  computing nont_first");
   compute_nont_first();
   
-  if(m_verbose_level >= 1)
-    std::cerr << "  computing neps_first" << std::endl;
+  logTrace(LOG_INFO, "  computing neps_first");
   compute_neps_first();
   
-  if(m_verbose_level >= 1)
-    std::cerr << "  computing ext_nont_first" << std::endl;
+  logTrace(LOG_INFO, "  computing ext_nont_first");
   compute_ext_nont_first();
   
-  if(m_verbose_level >= 1)
-    std::cerr << "  computing LR(0) items" << std::endl;
+  logTrace(LOG_INFO, "  computing LR(0) items");
   compute_lr0_items();
-  
-  
+
   
   std::set<std::pair<int, int> >::iterator l;
   //listing LR(0) items
-  if(m_verbose_level >= 2)
+  if(logIsEnabledFor(LOG_DEBUG))
   {
-    
     for(unsigned var = 0; var < m_items.size(); var++)
     {
-      std::cerr << "----ITEM " << var << "----" << std::endl;
+      logTrace(LOG_DEBUG, "----ITEM " << var << "----");
       for(l = m_items[var].begin(); l != m_items[var].end(); l++)
       {
         print_item(*l);
@@ -904,17 +878,16 @@ void LalrTable::make_lalr_table(void)
   //freeing the previous structure
   m_items.clear();
   
-  if(m_verbose_level >= 1)
-    std::cerr << "  computing lookaheads" << std::endl;
+  logTrace(LOG_INFO, "  computing lookaheads");
   compute_lookaheads();
   
   
   ////Listing the result
-  if(m_verbose_level >= 2)
+  if(logIsEnabledFor(LOG_DEBUG))
   {
     for(unsigned x = 0; x < m_ext_items.size(); x++)
     {
-      std::cerr << "------ STATE " << x <<" ------" << std::endl;
+      logTrace(LOG_DEBUG, "------ STATE " << x <<" ------");
       for(unsigned y = 0; y < m_ext_items[x].size(); y++)
       {
         print_item(std::make_pair(m_ext_items[x][y].rule_number, m_ext_items[x][y].dot_position));
@@ -928,13 +901,10 @@ void LalrTable::make_lalr_table(void)
     }
   }
 
-  if(m_verbose_level >= 1)
-    std::cerr << "  building GLALR table" << std::endl;
+  logTrace(LOG_INFO, "  building GLALR table");
   build_table();
 
-  if(m_verbose_level >= 1)
-    std::cerr << "## LALR table computing end ##" << std::endl;
-  
+  logTrace(LOG_INFO, "## LALR table computing end ##");
 }
 
 void LalrTable::load(const std::multimap<int, std::vector<int> >& input)

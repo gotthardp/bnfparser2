@@ -5,10 +5,7 @@ TESTFILE=`mktemp` || exit 1
 ./makewords $TESTFILE rfc4475
 # execute tests
 OUTFILE=`mktemp` || exit 1
-../bnfcheck -d 1 -e 238 sip-message \
-    :../share/conf/abnf.conf ../share/specs/rfc3261-25.abnf \
-    ../share/specs/rfc2806-2.abnf ../share/specs/rfc2234-6.1.abnf \
-    :../share/conf/abnf-rfc1035.conf ../share/specs/rfc1035-2.3.abnf < $TESTFILE | tee $OUTFILE
+../bnfcheck -v 6 -e 238 sip-message rfc3261-25.abnf < $TESTFILE | tee $OUTFILE
 # check the output
 diff $OUTFILE rfc4475.xout
 RETCODE=$?

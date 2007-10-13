@@ -93,17 +93,29 @@ public:
   /** \warning Must not be called before build_parser().
    */
   bool parse_word(const std::string& word);
-  
+
+  //! Adds new path where grammar and syntax specifications are located
+  void add_search_path(const char *path)
+  {
+    m_grammar.add_search_path(path);
+  }
+
   //! Sets the name of the starting nonterminal and the name of the file containing it.
   void set_start_nonterm(const std::string& start_name, const std::string& start_grammar_name)
   {
     m_grammar.set_start_nonterm(start_name,start_grammar_name);
   }
 
-  //! Loads a grammar-file together with its configuration file (mutliple calls possible)
-  void add_grammar(const std::string& g_name, const std::string& c_name)
+  //! Calls for add_grammar() for unresolved references
+  void add_referenced_grammars()
   {
-    m_grammar.add_grammar(g_name, c_name);
+    m_grammar.add_referenced_grammars();
+  }
+
+  //! Loads a grammar-file together with its configuration file (mutliple calls possible)
+  void add_grammar(const char *grammar_name, const char *syntax_name = NULL)
+  {
+    m_grammar.add_grammar(grammar_name, syntax_name);
   }
 
   //! Processes the set of grammar files added, computes GLALR table.
@@ -113,21 +125,9 @@ public:
     process_grammar(m_grammar.get_grammar(), m_grammar.get_nonterm_count());
   }
 
-  Parser(unsigned verbose = 0)
-  :m_verbose_level(verbose), m_grammar(verbose)
+  Parser()
+  : m_grammar()
   {}
-
-  //! Returns the value of #m_verbose_level
-  unsigned get_verbose_level(void)
-  { 
-    return m_verbose_level;
-  }
-
-  //! Sets the value of #m_verbose_level
-  void set_verbose_level(unsigned vl)
-  {
-    m_verbose_level = vl;
-  }
 
   //! Returns the result of the last parsing.
   bool get_parsing_result(void)
@@ -161,9 +161,6 @@ private:
   //! Stores the semantic string of the last parsing.
    std::string m_semantic_string;
 
-  //! The amount of information written to std::cerr
-  unsigned m_verbose_level;
-   
   //! The set of pending shift actions
   std::set<QMember> m_q;
   

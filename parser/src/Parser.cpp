@@ -17,6 +17,7 @@
  * $Id$
  */
 
+#include "Debug.h"
 #include "Parser.h"
 
 bool Parser::parse_word(const std::string& word)
@@ -114,8 +115,7 @@ void Parser::shifter(unsigned i, int a_i_plus_1, int a_i_plus_2)
 
   for(q_iter = m_q.begin(); q_iter != m_q.end(); q_iter++)
   {
-    if(m_verbose_level >= 2)
-      std::cerr <<"(" << i <<  ") shift " << q_iter->new_state << std::endl;
+    logTrace(LOG_DEBUG, "(" << i <<  ") shift " << q_iter->new_state);
 
     state_with_label = m_gss.find_state(i + 1, q_iter->new_state);
 
@@ -232,13 +232,10 @@ void Parser::reducer(unsigned i, int a_i_plus_1)
   now_processed = new RMember(*m_r.begin());
   m_r.erase(*now_processed);
 
-  if(m_verbose_level >= 2)
-  {
-    std::cerr<<"(" << i << ") reduce by " << now_processed->rule_number<<", length is " 
-        << now_processed->reduction_length << std::endl;
-    std::cerr<<"  state: " << m_gss.get_state_label(now_processed->state_node)
-             <<", level: " << m_gss.get_state_level(now_processed->state_node)<<std::endl;
-  }
+  logTrace(LOG_DEBUG, "(" << i << ") reduce by " << now_processed->rule_number
+    << ", length is " << now_processed->reduction_length);
+  logTrace(LOG_DEBUG, "  state: " << m_gss.get_state_label(now_processed->state_node)
+    << ", level: " << m_gss.get_state_level(now_processed->state_node));
   
   if(now_processed->rule_number == 0)
   {
@@ -331,15 +328,10 @@ void Parser::reducer(unsigned i, int a_i_plus_1)
     state_to_go = m_table->get_go_to(m_gss.get_state_label(chi[k].first), 
                                      m_table->get_lhs(now_processed->rule_number) + 256);
 
-
-                                     
-    if(m_verbose_level >= 2)
-    {
-      std::cerr<<"label chi[k]: " << m_gss.get_state_label(chi[k].first) << std::endl;
-      std::cerr<<"level chi[k]: " << m_gss.get_state_level(chi[k].first) << std::endl;
-      std::cerr<<"LHS           " << m_table->get_lhs(now_processed->rule_number)<<std::endl;
-      std::cerr<<"GOTO          " << state_to_go<< std::endl;
-    }
+    logTrace(LOG_DEBUG, "label chi[k]: " << m_gss.get_state_label(chi[k].first));
+    logTrace(LOG_DEBUG, "level chi[k]: " << m_gss.get_state_level(chi[k].first));
+    logTrace(LOG_DEBUG, "LHS           " << m_table->get_lhs(now_processed->rule_number));
+    logTrace(LOG_DEBUG, "GOTO          " << state_to_go);
          
     state_with_label = m_gss.find_state(i, state_to_go);
     if(state_with_label.empty())
@@ -424,7 +416,7 @@ void Parser::reducer(unsigned i, int a_i_plus_1)
 
 void Parser::process_grammar(const std::multimap<int, std::vector<int> >& grammar, unsigned nonterm_count)
 {
-  m_table = new LalrTable(nonterm_count, m_verbose_level);
+  m_table = new LalrTable(nonterm_count);
   m_table->load(grammar);
   m_table->make_lalr_table();
 }

@@ -29,7 +29,9 @@
 #include <string>
 #include <stdexcept>
 #include <cstdlib>
-
+#ifdef _WIN32
+#include <io.h> // mktemp
+#endif
 #include "config.h"
 
 //!  It's used for iterative text-file editing.
@@ -123,7 +125,7 @@ public:
     strncpy(m_temp2, tmpdir_s, sizeof(m_temp2)-1);
     strncat(m_temp1, "/parser_XXXXXX", sizeof(m_temp1)-strlen(m_temp1)-1);
     strncat(m_temp2, "/parser_XXXXXX", sizeof(m_temp2)-strlen(m_temp2)-1);
-#ifdef HAVE_MKSTEMP
+#if !defined(_WIN32) && defined(HAVE_MKSTEMP)
     int fd = -1;
     // create and close temporary files
     if(((fd = mkstemp(m_temp1)) == -1 || close(fd) != 0) ||

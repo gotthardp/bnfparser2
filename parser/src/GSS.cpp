@@ -74,7 +74,7 @@ std::vector<std::pair<GSS::StateIdent, std::string> > GSS::find_reachable(const 
   return retval;
 }
 
-std::vector<GSS::StateIdent> GSS::find_state(unsigned level, int label)
+std::vector<GSS::StateIdent> GSS::find_state(size_t level, int label)
 {
   unsigned i;
   

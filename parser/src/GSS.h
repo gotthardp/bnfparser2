@@ -100,7 +100,7 @@ private:
   std::vector<std::vector<StateNode> > m_state_levels;
 
   //! The length of the word
-  unsigned m_length;
+  size_t m_length;
   
 public:
   //! Constructor creates an empty GSS, must be initialised before use!
@@ -109,7 +109,7 @@ public:
   {}
   
   //! Resets the GSS, sets the new length of the word
-  void reset(unsigned length)
+  void reset(size_t length)
   {
     m_symbol_nodes.clear();
     m_state_levels.clear();
@@ -164,7 +164,7 @@ public:
   }
 
   //! Returns the level of the specified state node
-  unsigned get_state_level(const GSS::StateIdent& which)
+  size_t get_state_level(const GSS::StateIdent& which)
   {
     return which.level;
   }
@@ -179,7 +179,7 @@ public:
   std::vector<std::pair<GSS::StateIdent, std::string> > find_reachable(const GSS::StateIdent& from, unsigned length, const GSS::SymbolIdent& first_part);
 
   //! Returns the vector of state nodes with the specified label within the specified level 
-  std::vector<GSS::StateIdent> find_state(unsigned level, int label);
+  std::vector<GSS::StateIdent> find_state(size_t level, int label);
   
   //! Checks if the state level specified by the argument is empty
   bool state_level_empty(unsigned level)
@@ -214,10 +214,11 @@ public:
   }
 
   //! Returns the successors of the symbol node
-  unsigned get_successor_level(const SymbolIdent& node)
+  size_t get_successor_level(const SymbolIdent& node)
   {
     return m_symbol_nodes[node.id].successors.at(0).level;
   }
+
   //! Checks if the specified symbol node has the specified state node as a successor
   bool has_state_successor(const SymbolIdent& symbol, const StateIdent& state)
   {
@@ -229,7 +230,6 @@ public:
     }
     return false;
   }
-
 
   //! Adds a new semantic value to the specified symbol node
   void add_semantics_to_symbol(const SymbolIdent& symbol, const std::string& value)

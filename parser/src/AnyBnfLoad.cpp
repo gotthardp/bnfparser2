@@ -19,7 +19,35 @@
  */
 
 #include <iostream>
+#include <sys/stat.h>
+
+#include "Debug.h"
 #include "AnyBnfLoad.h"
+
+std::string AnyBnfLoad::get_syntax(void)
+{
+  std::string syntax;
+  pcrecpp::RE re_syntax("!syntax\\(\\s*\"([^\"]+)\"\\s*\\)");
+  bool syntax_found = false;
+
+  std::string line;
+  while(!m_grammar.end_of_file())
+  {
+    line = m_grammar.get_line();
+
+    if(!syntax_found && re_syntax.PartialMatch(line, &syntax))
+      syntax_found = true;
+
+    m_grammar.insert_line(line);
+  }
+
+  if(syntax.empty())
+    logTrace(LOG_INFO, "  no syntax variant indicated");
+  else
+    logTrace(LOG_INFO, "  indicated syntax variant: " << syntax);
+
+  return syntax;
+}
 
 void AnyBnfLoad::remove_empty(void)
 {
@@ -210,16 +238,20 @@ void AnyBnfLoad::process_line_comment(const std::string& line, int position)
       curr_dep.source_grammar = m_current_grammar;
       // by default, source and destination nonterminal are identical
       if(curr_dep.source_nonterm.empty())
-        curr_dep.source_nonterm = curr_dep.dest_nonterm;
-      m_dependencies.push_back(curr_dep);
-
-      if(m_verbose_level >= 1)
       {
-        std::cerr << "    Import: " << curr_dep.dest_nonterm << " in " << curr_dep.dest_grammar << " to ";
-        if(curr_dep.source_nonterm != curr_dep.dest_nonterm)
-          std::cerr << curr_dep.source_nonterm << " in ";
-        std::cerr << curr_dep.source_grammar << std::endl;
+        logTrace(LOG_INFO, "    Import: "
+          << curr_dep.dest_nonterm << " in " << curr_dep.dest_grammar << " to " << curr_dep.source_grammar);
+
+        curr_dep.source_nonterm = curr_dep.dest_nonterm;
       }
+      else
+      {
+        logTrace(LOG_INFO, "    Import: "
+          << curr_dep.dest_nonterm << " in " << curr_dep.dest_grammar << " to "
+          << curr_dep.source_nonterm << " in " << curr_dep.source_grammar);
+      }
+
+      m_dependencies.push_back(curr_dep);
     }
   } 
 }
@@ -305,18 +337,14 @@ void AnyBnfLoad::condensate_rules(void)
   pcrecpp::RE re_rule_wsp("^(\\s)*"+(m_config.get_base(0))+"@?(\\s)*");  
   //line in format <rulename><wsp>
 
-
-
-  if(m_verbose_level >= 2)
-    std::cerr<<"ENTER Condensate"<<std::endl;
+  logTrace(LOG_DEBUG, "ENTER Condensate");
   if (m_grammar.end_of_file())
   {
     throw std::runtime_error("Syntax error: Unexpected end of file (1)");
   }
   current=m_grammar.get_line();
 
-  if(m_verbose_level >= 2)
-    std::cerr<<"ENTER Condensate"<<std::endl;
+  logTrace(LOG_DEBUG, "ENTER Condensate");
   //skip first blank lines
   while (re_blank.FullMatch(current))
   {
@@ -324,20 +352,17 @@ void AnyBnfLoad::condensate_rules(void)
     {
      throw std::runtime_error("Syntax error: Unexpected end of file (2)");
     }
-    if(m_verbose_level >= 2)
-      std::cerr<<"Blank skipped"<<std::endl;
+    logTrace(LOG_DEBUG, "Blank skipped");
     current=m_grammar.get_line();
   }
  
-  if(m_verbose_level >= 2)
-    std::cerr<<"^^ENTER Condensate   "<<current<<std::endl;
+  logTrace(LOG_DEBUG, "^^ENTER Condensate   "<<current);
 
   //after this if block, string in 'current' variable will have following format:
   //<rulename><?wsp><defined><?anything else>
   if (!re_rule_wsp_def.PartialMatch(current))
   {
-    if(m_verbose_level >= 2)
-      std::cerr<<"  Not a definiton: "<<current<<std::endl;
+    logTrace(LOG_DEBUG, "  Not a definiton: "<<current);
     //find first none blank line
     if (m_grammar.end_of_file())
     {
@@ -350,12 +375,10 @@ void AnyBnfLoad::condensate_rules(void)
       {
         throw std::runtime_error("Syntax error: Unexpected end of file (4)");
       }
-      if(m_verbose_level >= 2)
-        std::cerr<<"getting new line because of the previous being blank"<<std::endl;
+      logTrace(LOG_DEBUG, "getting new line because of the previous being blank");
       next=m_grammar.get_line();
     }
-    if(m_verbose_level >= 2)
-      std::cerr<<next<<std::endl;
+    logTrace(LOG_DEBUG, next);
 
     //it has to have the required format
     if (!re_wsp_def.PartialMatch(next))
@@ -375,44 +398,37 @@ void AnyBnfLoad::condensate_rules(void)
   bool no_next_flag=false;
   bool finished=false;
 
-  if(m_verbose_level >= 2)
-    std::cerr<<"After inicialization"<<std::endl;
+  logTrace(LOG_DEBUG, "After inicialization");
   while (!finished)
   {
     //FIRST automaton - checks, if the string in 'current' is a complete rule.
 
     //find first non blank line
-    if(m_verbose_level >= 2)
-      std::cerr<<"Enter first Automaton"<<std::endl;
+    logTrace(LOG_DEBUG, "Enter first Automaton");
     if (!no_next_flag)
     {
-      if(m_verbose_level >= 2)
-        std::cerr<<"fetch new line ... FA"<<std::endl;
+      logTrace(LOG_DEBUG, "fetch new line ... FA");
       next=m_grammar.get_line();
     }
     no_next_flag=false;
 
-    if(m_verbose_level >= 2)
-      std::cerr<<current<<"  <- current next ->  "<<next<<std::endl;
+    logTrace(LOG_DEBUG, current<<"  <- current next ->  "<<next);
     while ((re_blank.FullMatch(next))&&(!finished))
     {
       if (m_grammar.end_of_file())
       {
         m_grammar.insert_line(current);
         finished=true;
-        if(m_verbose_level >= 2)
-          std::cerr<<"FINISHED HERE"<<std::endl;
+        logTrace(LOG_DEBUG, "FINISHED HERE");
         continue;
       }
       next=m_grammar.get_line();
-      if(m_verbose_level >= 2)
-        std::cerr<<"Enter first Automaton BLANK MATCH"<<std::endl;
+      logTrace(LOG_DEBUG, "Enter first Automaton BLANK MATCH");
     }
     
     if (finished)
     {
-      if(m_verbose_level >= 2)
-        std::cerr<<"CONTINUE in the 1st automaton"<<std::endl;
+      logTrace(LOG_DEBUG, "CONTINUE in the 1st automaton");
       continue;
     }
 
@@ -421,8 +437,7 @@ void AnyBnfLoad::condensate_rules(void)
       //both, rulename and definition, are in 'next' line ==> the rule in 'current' is complete
       //so we will write it back and continue
       m_grammar.insert_line(current);
-      if(m_verbose_level >= 2)
-        std::cerr<<"Enter first Automaton RULE MATCH"<<std::endl;
+      logTrace(LOG_DEBUG, "Enter first Automaton RULE MATCH");
 
       current.assign(next);
       continue;
@@ -432,19 +447,15 @@ void AnyBnfLoad::condensate_rules(void)
     //defined sequence and then backtracking (one line at most). Therefore we
     //need just three variables - current, next, lookout.
     
-    if(m_verbose_level >= 2)
-    {
-      std::cerr<<"Enter second Automaton"<<std::endl;
-      std::cerr<<current<<"  <- current next ->  "<<next<<std::endl;
-    }
+    logTrace(LOG_DEBUG, "Enter second Automaton");
+    logTrace(LOG_DEBUG, current<<"  <- current next ->  "<<next);
     //first non-blank line into lookout
     if (m_grammar.end_of_file())
     {
       current.append(next);
       m_grammar.insert_line(current);
       finished=true;
-      if(m_verbose_level >= 2)
-        std::cerr<<"FINISHED HERE - blank line SA"<<std::endl;
+      logTrace(LOG_DEBUG, "FINISHED HERE - blank line SA");
       continue;
     }
     lookout=m_grammar.get_line();
@@ -455,26 +466,22 @@ void AnyBnfLoad::condensate_rules(void)
         current.append(next);
         m_grammar.insert_line(current);
         finished=true;
-        if(m_verbose_level >= 2)
-          std::cerr<<"FINISHED HERE - FULL MATCH SA"<<std::endl;
+        logTrace(LOG_DEBUG, "FINISHED HERE - FULL MATCH SA");
         continue;
       }
 
-      if(m_verbose_level >= 2)
-        std::cerr<<"Load blank into lookahead in SA"<<std::endl;
+      logTrace(LOG_DEBUG, "Load blank into lookahead in SA");
       lookout=m_grammar.get_line();
     }
 
     if (re_def.PartialMatch(lookout))
     { 
-      if(m_verbose_level >= 2)
-        std::cerr << "re_def.PartialMatch" << std::endl;
+      logTrace(LOG_DEBUG, "re_def.PartialMatch");
     // if there the defined sequence is in 'lookout' string two options are open:
       if (re_rule_wsp_def.PartialMatch(lookout))
       {
         //rulename and definition are both in the 'lookout' line
-        if(m_verbose_level >= 2)
-          std::cerr<<"rulename and definition are both in the 'lookout' line"<<std::endl;
+        logTrace(LOG_DEBUG, "rulename and definition are both in the 'lookout' line");
         current.append(next);
         m_grammar.insert_line(current);
         current.assign(lookout);
@@ -489,8 +496,7 @@ void AnyBnfLoad::condensate_rules(void)
         {
           throw std::runtime_error("Condensate error 10");
         }
-        if(m_verbose_level >= 2)
-          std::cerr<<"re_wsp_def"<<std::endl;
+        logTrace(LOG_DEBUG, "re_wsp_def");
         m_grammar.insert_line(current);
         next.append(lookout);
         current.assign(next);
@@ -501,15 +507,13 @@ void AnyBnfLoad::condensate_rules(void)
     {
       // defined is not on lookout line ==> the string in 'next' still belongs
       // to rule in 'current'. 
-      if(m_verbose_level >= 2)
-        std::cerr<<"else Second Automaton"<<std::endl;
+      logTrace(LOG_DEBUG, "else Second Automaton");
       no_next_flag=true;
       current.append(next);
       next.assign(lookout);
     }
   }
-  if(m_verbose_level >= 2)
-    std::cerr<<"PASS SUCCESFULL"<<std::endl;
+  logTrace(LOG_DEBUG, "PASS SUCCESFULL");
 }
 
 void AnyBnfLoad::wipe_whitespace(void)
@@ -533,7 +537,7 @@ void AnyBnfLoad::transform_strings(void)
   std::string line;
   bool in_string=false;
   bool case_insensitive=true;
-  unsigned position;
+  std::string::size_type position;
   char read_char;
 
 
@@ -571,8 +575,7 @@ void AnyBnfLoad::transform_strings(void)
       }
     }
     m_grammar.insert_line(stream_helper.str());
-    if(m_verbose_level >= 2)
-      std::cerr << stream_helper.str()<<std::endl;
+    logTrace(LOG_DEBUG, stream_helper.str());
     stream_helper.str("");
   }
   
@@ -704,8 +707,7 @@ void AnyBnfLoad::transform_names(void)
       if(found_word.at(0) == '%')
         continue;
       std::stringstream value;
-      if(m_verbose_level >= 2)
-        std::cerr<<"value of nontermcount => "<< m_nonterm_count <<std::endl;
+      logTrace(LOG_DEBUG, "value of nontermcount => "<< m_nonterm_count);
 
       found_word_lc = found_word;
       if(m_config.get_base(13) != "true")
@@ -714,8 +716,7 @@ void AnyBnfLoad::transform_names(void)
           found_word_lc.at(i) = tolower(found_word_lc.at(i));
       }
 
-      if(m_verbose_level >= 2)
-        std::cerr << found_word_lc << std::endl;
+      logTrace(LOG_DEBUG, found_word_lc);
       if (m_nonterm_names[m_current_grammar][found_word_lc].val()==-1)
       {
         //the found word is found for the first time
@@ -764,14 +765,12 @@ void AnyBnfLoad::transform_names(void)
   {
     if(m_dependencies.at(i).source_grammar == m_current_grammar)
     {
-      if(m_verbose_level >= 2)
-        std::cerr << "Got left side " << m_dependencies.at(i).nonterm << std::endl;
+      logTrace(LOG_DEBUG, "Got left side " << m_dependencies.at(i).nonterm);
       m_dependencies.at(i).source_num = test_table[m_dependencies.at(i).nonterm].val();
     }
     if(m_dependencies.at(i).dest_grammar == m_current_grammar)
     {
-      if(m_verbose_level >= 2)
-        std::cerr << "Got right side " << m_dependencies.at(i).nonterm << std::endl;
+      logTrace(LOG_DEBUG, "Got right side " << m_dependencies.at(i).nonterm);
       m_dependencies.at(i).dest_num = test_table[m_dependencies.at(i).nonterm].val();
     }
   }*/
@@ -800,8 +799,7 @@ void AnyBnfLoad::to_abnf(void)
     position = oper.find("=");
     if(position == std::string::npos)
     {
-      if(m_verbose_level >= 2)
-        std::cerr << "Invalid operator line - skipping..." << std::endl;
+      logTrace(LOG_DEBUG, "Invalid operator line - skipping...");
       continue;
     }
     pattern = oper.substr(0, position);
@@ -826,7 +824,7 @@ void AnyBnfLoad::to_abnf(void)
     {   
         std::string source;
         source = pattern;
-        unsigned pos_before = 0;
+        std::string::size_type pos_before = 0;
                    
         pattern = "";
         position = source.find_first_of("?|.[]$()*+{}");
@@ -845,8 +843,7 @@ void AnyBnfLoad::to_abnf(void)
     escaped_seq.GlobalReplace(non_brack_word, &pattern);
     escaped_nums.GlobalReplace(numbers, &pattern);
     escaped_elem.GlobalReplace(single_element, &pattern);
-    if(m_verbose_level >= 2)
-      std::cerr << pattern << "->" << definition << std::endl;
+    logTrace(LOG_DEBUG, pattern << "->" << definition);
     construct = new pcrecpp::RE(pattern);
     releft.push_back(construct);
     right.push_back(definition);
@@ -882,8 +879,7 @@ void AnyBnfLoad::to_abnf(void)
         priority++;
     }
     m_grammar.insert_line(line);
-    if(m_verbose_level >= 2)
-      std::cerr << line << std::endl;
+    logTrace(LOG_DEBUG, line);
   }
 
   m_grammar.swap();
@@ -1042,8 +1038,7 @@ void AnyBnfLoad::to_bnf(void)
       for(int i = 0; i < n; i++)
         stream_helper << rule << ' ';
       m_grammar.insert_line(new_name + ' ' + stream_helper.str());
-      if(m_verbose_level >= 2)
-        std::cerr << new_name + ' ' + stream_helper.str() <<std::endl;
+      logTrace(LOG_DEBUG, new_name + ' ' + stream_helper.str());
       stream_helper.str("");
     }
 
@@ -1055,20 +1050,18 @@ void AnyBnfLoad::to_bnf(void)
       aster_only.Replace(' ' + new_name, &line);
       stream_helper.str("");
       m_grammar.insert_line(new_name);
-      if(m_verbose_level >= 2)
-        std::cerr << new_name << ' '<<std::endl;
+      logTrace(LOG_DEBUG, new_name << ' ');
       m_grammar.insert_line(new_name + ' ' + rule + ' ' + new_name);
-      if(m_verbose_level >= 2)
-        std::cerr << new_name + ' ' + rule + ' ' + new_name <<std::endl;
+      logTrace(LOG_DEBUG, new_name + ' ' + rule + ' ' + new_name);
     }
 
     //Removing <n>*<m> <elem> - like rules
     while(fixed_range.PartialMatch(line, &m, &n, &rule))
     {
-      if(m > n && m_verbose_level >= 1)
+      if(m > n)
       {
-        std::cerr << "VAROVANI: interval " << m << " - " << n << " je prazdny." << std::endl;
-        std::cerr << line << std::endl;
+        logTrace(LOG_WARNING, "Warning: interval " << m << " - " << n << " is empty.");
+        logTrace(LOG_WARNING, line);
       }
       stream_helper << '\036' << m_nonterm_count++ << '\037';
       new_name = stream_helper.str();
@@ -1079,8 +1072,7 @@ void AnyBnfLoad::to_bnf(void)
       for(int i = m; i <= n ; i++)
       {
         m_grammar.insert_line(new_name + ' ' + stream_helper.str());
-        if(m_verbose_level >= 2)
-          std::cerr << new_name + ' ' + stream_helper.str()<<std::endl;
+        logTrace(LOG_DEBUG, new_name << ' ' << stream_helper.str());
         stream_helper << rule << ' ';
       }
       stream_helper.str("");
@@ -1096,8 +1088,7 @@ void AnyBnfLoad::to_bnf(void)
       for(int i = 0; i <= m ; i++)
       {
         m_grammar.insert_line(new_name + ' ' + stream_helper.str());
-        if(m_verbose_level >= 2)
-          std::cerr << new_name << ' ' << stream_helper.str() << std::endl;
+        logTrace(LOG_DEBUG, new_name << ' ' << stream_helper.str());
         stream_helper << rule << ' ';
       }
     }
@@ -1114,23 +1105,19 @@ void AnyBnfLoad::to_bnf(void)
         stream_helper << rule << ' ';
       stream_helper << '\036' << m_nonterm_count << '\037';
       m_grammar.insert_line(stream_helper.str());
-      if(m_verbose_level >= 2)
-        std::cerr << stream_helper.str() << std::endl;
+      logTrace(LOG_DEBUG, stream_helper.str());
       stream_helper.str("");
       stream_helper << '\036' << m_nonterm_count<< '\037' << ' ';
       m_grammar.insert_line(stream_helper.str());
-      if(m_verbose_level >= 2)
-        std::cerr << stream_helper.str() << std::endl;
+      logTrace(LOG_DEBUG, stream_helper.str());
       stream_helper << rule << ' ' << '\036' << m_nonterm_count++ << '\037';
       m_grammar.insert_line(stream_helper.str());
-      if(m_verbose_level >= 2)
-        std::cerr << stream_helper.str() << std::endl;
+      logTrace(LOG_DEBUG, stream_helper.str());
       stream_helper.str("");
     }
     m_grammar.insert_line(line);
     
-    if(m_verbose_level >= 2)
-      std::cerr << line <<std::endl;
+    logTrace(LOG_DEBUG, line);
   }
   m_grammar.swap();
 
@@ -1150,12 +1137,10 @@ void AnyBnfLoad::to_bnf(void)
       line = line.substr(position + 1);
       position = line.find("\035");
       m_grammar.insert_line(new_name + rule);
-      if(m_verbose_level >= 2)
-        std::cerr << new_name + rule << std::endl;
+      logTrace(LOG_DEBUG, new_name + rule);
     }
     m_grammar.insert_line(new_name + line);
-    if(m_verbose_level >= 2)
-      std::cerr << new_name + line<< std::endl;
+    logTrace(LOG_DEBUG, new_name + line);
   }
     
 }
@@ -1404,7 +1389,7 @@ void AnyBnfLoad::remove_unreachable (void)
       if(range_iter.first == range_iter.second)
         nonterm_present = false;
         
-      else if(m_verbose_level >= 2)
+      else if(logIsEnabledFor(LOG_DEBUG))
         for (CIT rip=range_iter.first; rip!=range_iter.second; ++rip)
         {
           std::cerr << i << " = ";
@@ -1419,7 +1404,7 @@ void AnyBnfLoad::remove_unreachable (void)
         std::cerr << "Warning: nonterminal " << m_names[i].first << " is not defined in "
                   << m_grammar_names.at(m_names[i].second) << "." << std::endl;
       }
-      else if(m_verbose_level >= 2)
+      else if(logIsEnabledFor(LOG_DEBUG))
         for (CIT rip=range_iter.first; rip!=range_iter.second; ++rip)
         {
           std::cerr << INT_MAX - i << " = ";
@@ -1438,86 +1423,129 @@ void AnyBnfLoad::remove_unreachable (void)
   }
 }
 
-void AnyBnfLoad::add_grammar(const std::string& grammar, const std::string& config)
+void AnyBnfLoad::add_referenced_grammars()
+{
+  for(std::vector<AnyBnfLoad::dependency>::const_iterator pos = m_dependencies.begin();
+    pos != m_dependencies.end(); pos++)
+  {
+    if(m_nonterm_names.find(pos->dest_grammar) == m_nonterm_names.end())
+    {
+      logTrace(LOG_INFO, "  load " << pos->dest_grammar << " referenced from " << pos->source_grammar);
+      // load referenced grammar
+      // this may cause new entries appended to m_dependencies, the *pos iterator is not invalidated
+      add_grammar(pos->dest_grammar.c_str());
+    }
+  }
+}
+
+void AnyBnfLoad::add_grammar(const char *grammar_name, const char *syntax_name)
 {
   std::string line_test;
-  // extract grammar name, omitting the directory path
-  std::string::size_type namepos = grammar.find_last_of("\\/");
-  if (namepos != std::string::npos)
-    m_current_grammar.assign(grammar, namepos+1, grammar.size()-namepos-1);
-  else
-    m_current_grammar = grammar;
+  m_current_grammar = grammar_name;
 
   m_current_grammar_id = m_grammar_names.size();
-  m_grammar_names.push_back(m_current_grammar);
+  m_grammar_names.push_back(grammar_name);
 
-  if(m_verbose_level >= 1)
-    std::cerr << "## File processing start ##" << std::endl;
+  logTrace(LOG_INFO, "## File processing start ##");
+
+  std::string grammar_filename = grammar_name;
+  // search for grammar file
+  std::vector<std::string>::const_iterator gpos = m_search_paths.begin();
+  while(1)
+  {
+    logTrace(LOG_INFO, "  searching for grammar: " << grammar_filename);
+
+    // search for the given file
+    struct stat fileinfo;
+    if(stat(grammar_filename.c_str(), &fileinfo) == 0)
+      break;
+    if(gpos == m_search_paths.end())
+      throw std::runtime_error("File not found");
+
+    grammar_filename = *(gpos++) + "/" + grammar_name;
+  }
+
   // load grammar file
-  if(m_verbose_level >= 1)
-    std::cerr << "  loading grammar: " << grammar << std::endl;
-  m_grammar.load_file(grammar);
+  logTrace(LOG_INFO, "  loading grammar: " << grammar_filename);
+  m_grammar.load_file(grammar_filename);
 
-  //load grammar conf
-  if(m_verbose_level >= 1)
-    std::cerr << "  loading configuration: " << config << std::endl;
-  m_config.parse_conf(config);
+  std::string syntax_name_s;
+  if(syntax_name != NULL )
+  {
+    logTrace(LOG_INFO, "  using given syntax: " << syntax_name);
+    syntax_name_s = syntax_name;
+  }
+  else
+  {
+    // obtain syntax from the grammar file
+    syntax_name_s = get_syntax();
+    m_grammar.swap();
 
-  if(m_verbose_level >= 1)
-    std::cerr<<"  processing comments"<<std::endl;
+    if(syntax_name_s.empty())
+      throw std::runtime_error("Unknown syntax");
+  }
+
+  std::string syntax_filename = "syntax/" + syntax_name_s + ".conf";
+  // search for syntax configuration file
+  std::vector<std::string>::const_iterator spos = m_search_paths.begin();
+  while(1)
+  {
+    logTrace(LOG_INFO, "  searching for syntax: " << syntax_filename);
+
+    // search for the given file
+    struct stat fileinfo;
+    if(stat(syntax_filename.c_str(), &fileinfo) == 0)
+      break;
+    if(spos == m_search_paths.end())
+      throw std::runtime_error("File not found");
+
+    syntax_filename = *(spos++) + "/syntax/" + syntax_name_s + ".conf";
+  }
+
+  // load grammar syntax confinguration
+  logTrace(LOG_INFO, "  loading configuration: " << syntax_filename);
+  m_config.parse_conf(syntax_filename);
+
+  logTrace(LOG_INFO, "  processing comments");
   remove_comments();
   m_grammar.swap();
   
-  if(m_verbose_level >= 1)
-    std::cerr<<"  transforming strings"<<std::endl;
+  logTrace(LOG_INFO, "  transforming strings");
   transform_strings();
   m_grammar.swap();
 
-  if(m_verbose_level >= 1)
-    std::cerr<<"  condensating rules"<<std::endl;
+  logTrace(LOG_INFO, "  condensating rules");
   condensate_rules();
   m_grammar.swap();
   
-  if(m_verbose_level >= 1)
-    std::cerr << "  reducing whitespace" << std::endl;
+  logTrace(LOG_INFO, "  reducing whitespace");
   wipe_whitespace();
   m_grammar.swap();
   
-  if(m_verbose_level >= 1)
-    std::cerr<<"  nonterminals to numbers"<<std::endl;
+  logTrace(LOG_INFO, "  nonterminals to numbers");
   transform_names();
   m_grammar.swap();
   
-  if(m_verbose_level >= 1)
-    std::cerr<<"  making ABNF"<<std::endl;
+  logTrace(LOG_INFO, "  making ABNF");
   to_abnf();
   m_grammar.swap();
   
-  if(m_verbose_level >= 1)
-    std::cerr<<"  making BNF"<<std::endl;
+  logTrace(LOG_INFO, "  making BNF");
   to_bnf();
   m_grammar.swap();
   
-  if(m_verbose_level >= 1)
-    std::cerr<<"  inserting into global table"<<std::endl;
+  logTrace(LOG_INFO, "  inserting into global table");
   insert_into_table();
   m_grammar.swap();
   
-  if(m_verbose_level >= 1)
-    std::cerr << "## File processing end ##" << std::endl;
-  
+  logTrace(LOG_INFO, "## File processing end ##");
 }
 
 void AnyBnfLoad::set_start_nonterm(const std::string& start_name, const std::string& start_grammar_name)
 {
   m_start_set = true;
   m_start_nonterm = start_name;
-  // extract grammar name, omitting the directory path
-  std::string::size_type namepos = start_grammar_name.find_last_of("\\/");
-  if (namepos != std::string::npos)
-    m_start_grammar.assign(start_grammar_name, namepos+1, start_grammar_name.size()-namepos-1);
-  else
-    m_start_grammar = start_grammar_name;
+  m_start_grammar = start_grammar_name;
 }
 
 #ifdef _ANYBNFLOAD_TEST_

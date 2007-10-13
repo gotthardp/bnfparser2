@@ -33,7 +33,8 @@
 #include <cctype>
 #include <map>
 
-#include "pcrecpp.h"
+#include <pcrecpp.h>
+
 #include "AnyBnfFile.h"
 #include "AnyBnfConf.h"
 
@@ -45,9 +46,6 @@
 class AnyBnfLoad
 {
 private:
-  //! The amount of information written to std::cerr
-  unsigned m_verbose_level;
-  
   AnyBnfFile m_grammar;             //!<for manipulation with input file
   AnyBnfConf m_config;              //!<for manipulation with configuration file
 
@@ -67,7 +65,7 @@ private:
   std::string m_current_grammar;
 
   //!Contains the numeric identifier of the current grammar file
-  unsigned m_current_grammar_id;
+  size_t m_current_grammar_id;
   
   //!This structure stores the dependecies between grammar files.
   /** If the grammar file A contains nonterminal called a_n, which is
@@ -129,6 +127,12 @@ private:
 
   //!Gives a list of positions of beginings of terminal substrings.
   std::vector<int> find_term_pos(const std::string& data);
+
+  //! A list of paths where grammar and syntax specifications are located.
+  std::vector<std::string> m_search_paths;
+
+  //!Gives a value of the first !syntax() parameter.
+  std::string get_syntax(void);
     
   //!Removes empty lines from the processed file.    
   void remove_empty(void);   
@@ -196,16 +200,25 @@ public:
    *  the rule for the starting nonterminal) are added to the table.
    */ 
   void remove_unreachable (void);
-  
+
+  //! Adds new path where grammar and syntax specifications are located
+  void add_search_path(const char *path)
+  {
+    m_search_paths.push_back(path);
+  }
+
+  //! Calls add_grammar() for unresolved references
+  void add_referenced_grammars();
+
   //!The main processing procedure. Must not be called before load_global().
-  /** It takes the name of the grammar and config file, loads the configuration
+  /** It takes the name of the grammar and syntax config file, loads the configuration
    *  and performs the steps needed for adding the grammar into the global table.
    *  The sequence of step is: remove_comments(), transform_strings(),
    *  condensate_rules(), wipe_whitespace(), to_abnf(), to_bnf(), add_prefixes(),
    *  insert_into_table().
    */    
-  void add_grammar(const std::string& grammar, const std::string& config);
-  
+  void add_grammar(const char *grammar_name, const char *syntax_name = NULL);
+
   //!  Sets the name of the starting nonterminal and the name of the file containing it.
   void set_start_nonterm(const std::string& start_name, const std::string& start_grammar_name);
 
@@ -230,21 +243,9 @@ public:
     return m_nonterm_count;
   }
 
-  //! Returns the value of #m_verbose_level
-  unsigned get_verbose_level(void)
-  { 
-    return m_verbose_level;
-  }
-
-  //! Sets the value of #m_verbose_level
-  void set_verbose_level(unsigned vl)
-  {
-    m_verbose_level = vl;
-  }
-
   //!Constructor takes the verbose level.
-  AnyBnfLoad(unsigned verbose = 0)
-  :m_verbose_level(verbose), m_start_set(false), m_nonterm_count(2)
+  AnyBnfLoad()
+  : m_start_set(false), m_nonterm_count(2)
   {}
 
 };
