@@ -14,6 +14,13 @@ details please see README in respective subdirectories.
 Part B. Developer Instructions
 ==============================
 
+To get the latest sources
+svn co https://bnfparser2.svn.sourceforge.net/svnroot/bnfparser2/trunk bnfparser2
+
+To make a snapshot
+svn cp parser https://bnfparser2.svn.sourceforge.net/svnroot/bnfparser2/tags/parser/0.1
+
+
 Source files should have the following properties
   svn:eol-style=native
   svn:keywords=Id

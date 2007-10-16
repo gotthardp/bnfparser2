@@ -1,0 +1,19 @@
+Get the latest sources using:
+svn co https://bnfparser2.svn.sourceforge.net/svnroot/bnfparser2/trunk bnfparser2
+
+
+This is the top of the Subversion repository.
+
+  trunk/
+    The latest development sources.
+
+  tags/
+    Snapshots of releases. As a general policy, we don't change these after
+    they're created; if something needs to change, we copy it to branches/.
+
+  branches/
+    Temporary copies of trunk. Branch copies are generally removed after
+    they've been merged back into trunk/.
+
+
+$Id$

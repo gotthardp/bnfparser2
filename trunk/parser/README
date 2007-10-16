@@ -8,8 +8,23 @@ If you need support, please check http://bnfparser2.sourceforge.net, or
 contact <bnfparser2-users@lists.sourceforge.net>.
 
 
-A.1. Build instructions
-----------------------------
+A.1. Introduction
+-----------------
+
+The latest version can be obtained at
+  http://bnfparser2.sourceforge.net
+
+There are the following mailing lists
+  bnfparser2-users@lists.sourceforge.net
+  bnfparser2-devel@lists.sourceforge.net
+  bnfparser2-commits@lists.sourceforge.net
+
+To subscribe to the lists or to visit the archives, please check
+  http://sourceforge.net/projects/bnfparser2
+
+
+A.2. Build instructions
+-----------------------
 
 The following software need to be installed
  - pcrecpp library (http://www.pcre.org)
