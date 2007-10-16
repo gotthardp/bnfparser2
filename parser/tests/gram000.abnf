@@ -1,0 +1,7 @@
+; $Id$
+; A simple non-empty ambiguous grammar
+
+; !syntax("abnf")
+
+S = *U 1*U *U
+U = "a" / "b" / "c"

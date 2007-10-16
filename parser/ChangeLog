@@ -1,0 +1,12 @@
+2007-10-13  Petr Gotthard  <petr.gotthard@siemens.com>
+    * simplified command-line interface of bnfcheck
+    * added add_search_path() and search path support
+    * added add_referenced_grammars() to automatically resolve references
+    * added !syntax tag
+    * updated add_grammar() to automatically determine BNF variant
+    * updated README and bnfcheck.1
+    * updated debugging and tracing functionality
+    * restructured the share directory
+    * fixed Win32 portability
+
+$Id$

@@ -1,0 +1,86 @@
+#
+# bnfparser2 - Generic BNF-adaptable parser
+# http://bnfparser2.sourceforge.net
+#
+#	This library is free software; you can redistribute it and/or
+#       modify it under the terms of the GNU Lesser General Public
+#       License version 2.1, as published by the Free Software Foundation.
+#
+#       This library is distributed in the hope that it will be useful,
+#       but WITHOUT ANY WARRANTY; without even the implied warranty of
+#       MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+#       Lesser General Public License for more details.
+#
+# Copyright (c) 2007 ANF DATA spol. s r.o.
+#
+# $Id$
+#
+
+prefix = @prefix@
+exec_prefix = @exec_prefix@
+sysconfdir = @sysconfdir@
+bindir = @bindir@
+libdir = @libdir@
+includedir = @includedir@
+datarootdir = @datarootdir@
+datadir = @datadir@
+
+CC = @CC@
+CXX = @CXX@
+DEFS = @DEFS@
+CPPFLAGS = -ansi -Wall -DDATADIR=\"$(datadir)/BnfParser2\" @CPPFLAGS@
+LIBS = @LIBS@
+# note: if you want to use gprof, append "-pg" to CPPFLAGS and LIBS
+
+TARGET = libBnfParser2.so.0
+TARGET_OBJS = LalrTable.o GSS.o Parser.o AnyBnfLoad.o AnyBnfConf.o AnyBnfFile.o BnfParser2.o Debug.o
+
+TEST = ../bnfcheck
+TEST_OBJS = bnfcheck.o
+
+DEPENDENCY_FILES = *.cpp
+
+all: $(TARGET) $(TEST)
+
+$(TARGET): .depend $(TARGET_OBJS)
+	@echo "  LD $(@F)"; \
+	$(CXX) -shared -Wl,-soname,$(TARGET) $(TARGET_OBJS) -o $@; \
+	ln -sf $@ libBnfParser2.so
+
+# note: to simplify profiling (gprof) the test tool should be linked statically
+$(TEST): $(TEST_OBJS)
+	@echo "  LD $(@F)"; \
+	$(CXX) $(LDFLAGS) -L. $(TEST_OBJS) $(LIBS) -lBnfParser2 -o $@;
+
+%.o: %.cpp
+	@echo "  CXX $<"; \
+	$(CXX) -c $(CPPFLAGS) $(DEFS) $< -o $@
+
+clean:
+	-rm -rf .depend $(TARGET_OBJS) $(TARGET) libBnfParser2.so $(TEST_OBJS) $(TEST)
+
+distclean: clean
+	-rm -rf Makefile config.h
+
+rebuild: clean all
+
+
+INSTALL_HEADERS = BnfParser2.h
+
+install:
+	mkdir -p $(includedir)
+	cp -pf $(INSTALL_HEADERS) $(includedir)
+	mkdir -p $(libdir)
+	cp -pf $(TARGET) $(libdir)
+	ln -sf $(TARGET) $(libdir)/libBnfParser2.so
+	mkdir -p $(bindir)
+	cp -pf $(TEST) $(bindir)
+
+
+.depend dep: $(DEPENDENCY_FILES)
+	@echo "  DEP $(DEPENDENCY_FILES)"; \
+	$(CXX) -c -MM $(CPPFLAGS) $(DEFS) $(DEPENDENCY_FILES) | grep -v '^#' | grep -v '^$$' > .depend
+
+ifeq (.depend,$(wildcard .depend))
+include .depend
+endif 
