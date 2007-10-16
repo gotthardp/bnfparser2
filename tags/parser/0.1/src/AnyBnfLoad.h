@@ -1,0 +1,255 @@
+/*
+ * bnfparser2 - Generic BNF-adaptable parser
+ * http://bnfparser2.sourceforge.net
+ *
+ *      This library is free software; you can redistribute it and/or
+ *      modify it under the terms of the GNU Lesser General Public
+ *      License version 2.1, as published by the Free Software Foundation.
+ *
+ *      This library is distributed in the hope that it will be useful,
+ *      but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *      MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ *      Lesser General Public License for more details.
+ *
+ * Copyright (c) 2007 ANF DATA spol. s r.o.
+ * Copyright (c) 2007 Vaclav Vacek <vacek@ics.muni.cz>
+ * Copyright (c) 2007 Petr Slovak <slovak@ics.muni.cz>
+ *
+ * $Id$
+ */
+
+#ifndef _ANYBNFLOAD_
+#define _ANYBNFLOAD_
+
+//#define _ANYBNFLOAD_TEST_
+
+#include <vector> 
+#include <queue> 
+#include <set> 
+#include <string>
+#include <stdexcept>
+#include <sstream>
+#include <cstdlib>
+#include <cctype>
+#include <map>
+
+#include <pcrecpp.h>
+
+#include "AnyBnfFile.h"
+#include "AnyBnfConf.h"
+
+//!  This is the main grammar-file-loading class.
+/*  First it loads the grammar and configuration file.
+ *  Then it performs the preprocessing steps.
+ *  Finally it adds the modified grammar into the table.
+ */ 
+class AnyBnfLoad
+{
+private:
+  AnyBnfFile m_grammar;             //!<for manipulation with input file
+  AnyBnfConf m_config;              //!<for manipulation with configuration file
+
+  //!Contains the name of the starting nonterminal specified in the global configuration file.
+  std::string m_start_nonterm;
+  
+  //!Contains the name of the grammar containing the starting nonterminal.  
+  std::string m_start_grammar;
+  
+  //!Contains the global number of the starting nonterminal.
+  int m_start_nonterm_number;
+  
+  //! Is set to true when the starting nonterminal is set
+  bool m_start_set;
+  
+  //!Contains the name of the processed grammar file
+  std::string m_current_grammar;
+
+  //!Contains the numeric identifier of the current grammar file
+  size_t m_current_grammar_id;
+  
+  //!This structure stores the dependecies between grammar files.
+  /** If the grammar file A contains nonterminal called a_n, which is
+   *  defined int the grammar file B, the structure contains the name of
+   *  the nonterminal, the names of the grammar files and the numbers of the
+   *  nonterminal in both files. If the number is not known, value of -1 is used
+   */   
+  class dependency
+  {
+  public:
+    std::string source_nonterm; //!<the name of the binded nonterminal
+    std::string dest_nonterm; //!<the name of the nonterm in the pointed grammar
+    std::string source_grammar;//!<the name of the source grammar
+    std::string dest_grammar;  //!<the name of the destination grammar
+    int source_num;   //!<the number of the nonterminal in the source grammar
+    int dest_num;  //!<the number of the nonterminal in the destination grammar
+    dependency() : source_num(-1), dest_num(-1){}
+  };
+  
+  //!The vector of the dependencies specified if the global configuration file
+  std::vector<dependency> m_dependencies;
+
+  //!Encapsulation of int, default value is -1 instead of 0.
+  class count 
+  {
+    int i;  //!< the encapsulated number
+  public:
+    count() : i(-1) {};  //!constructor, default value is -1
+    void insert (int ins) {i=ins; }  //!<sets the number's value to ins.
+    int& val() { return i; }  //!<returns the number
+  };
+
+  //!Maps names of nonterminals to numbers, stored for each grammar
+  std::map<std::string, std::map<std::string, count> > m_nonterm_names;
+
+  //!For each grammar it stores if its rulenames are case sensitive
+  std::map<std::string, bool> m_grammar_case_sensitive;
+  
+  //!Maps all the nonterminal numbers back to its original names.
+  //!The information is not stored for newly created nonterminals
+  std::map<int, std::pair<std::string, unsigned> > m_names;
+
+  //!Stores the names of all the grammars added
+  std::vector<std::string> m_grammar_names;
+
+  //!Counts nonterminals continuosly (is not reset to 0 after finishing one grammar).
+  //!Actually it is one number higher than the real count of the nonterminals
+  int m_nonterm_count;
+
+  //!Stores the number of the rules.
+  int m_rule_count;
+
+  //!Global table of the rules from all the grammar files.
+  /** The set of rules is represented as the multimap, the key is the number of the
+   *  nonterminal on the left side of the rule, the value is the vector
+   *  of the symbols on the right side of the rule. 
+   */
+  std::multimap<int, std::vector<int> > m_global_table;
+
+  //!Gives a list of positions of beginings of terminal substrings.
+  std::vector<int> find_term_pos(const std::string& data);
+
+  //! A list of paths where grammar and syntax specifications are located.
+  std::vector<std::string> m_search_paths;
+
+  //!Gives a value of the first !syntax() parameter.
+  std::string get_syntax(void);
+    
+  //!Removes empty lines from the processed file.    
+  void remove_empty(void);   
+  
+  //!Removes all the comments from the processed file.             
+  void remove_comments(void);
+
+  //!Processes a line comment starting at the specified position of the given string (// in C++ style)
+  /** The line without the comment is written directly to the file, if the comment
+   *  contains a dependency directive, it is stored.  
+   */       
+  void process_line_comment(const std::string& m_line, int m_position);
+  
+  //!Removes group comment of the specified position of the given string
+  /** It reads consequent lines until the end_of_comment symbol is found.
+   *  Then the rest of the line (which is not a comment) is concatenated with
+   *  the beginning of the first line and the result is returned.
+   */   
+  std::string remove_group_comment(std::string m_line, int m_position);
+  
+  //!Transforms all the strings in the processed file into sequences of decimal codes. Must not be called before remove_comments(). 
+  /** "abc" is thus transformed into (%d97 %d98 %d99)
+   */ 
+  void transform_strings(void); 
+  
+  //!It condensates all the rules defined on multiple lines.
+  /** For example the rule
+   *  A = 
+   *    B (C |
+   *    D)
+   *  is transformed into 
+   *  A = B (C | D)    
+   */     
+  void condensate_rules(void);
+
+  //!Reduces whitespace of any length to a single space. Must not be called before condensate_rules(). 
+  void wipe_whitespace(void);       
+
+  //!Transforms the grammar into ABNF. Must not be called before wipe_whitespace(). 
+  void to_abnf(void);    
+  
+  //!Transforms the ABNF grammar into BNF. Must not be called before to_abnf().         
+  void to_bnf(void);
+  
+  //!Transforms nonterminals to numbers. Must be called before to_abnf(). 
+  /** As each grammar file receives its own interval of numbers, the procedure
+   *  may be considered as namespacing as well. During this, the marked nonterminals
+   *  are recognised   
+   */               
+  void transform_names(void);
+  
+  //!Adds the grammar into the global table. Must not be called before add_prefixes(). 
+  void insert_into_table(void);
+
+  //!Internal function used by remove_unreachable()
+  std::set<int> process_nonterm(std::set<int>* pending,
+                                std::set<int>* prev_nonterm);
+                                
+  //!Internal function used by remove_unreachable()
+  std::queue<int> get_nonterm (int nonterminal);
+
+public:
+  //!Removes non-terminals and rules that cannot be reached from the starting rule.
+  /** Before doing that, new rules (defined in the #m_dependencies strucure and
+   *  the rule for the starting nonterminal) are added to the table.
+   */ 
+  void remove_unreachable (void);
+
+  //! Adds new path where grammar and syntax specifications are located
+  void add_search_path(const char *path)
+  {
+    m_search_paths.push_back(path);
+  }
+
+  //! Calls add_grammar() for unresolved references
+  void add_referenced_grammars();
+
+  //!The main processing procedure. Must not be called before load_global().
+  /** It takes the name of the grammar and syntax config file, loads the configuration
+   *  and performs the steps needed for adding the grammar into the global table.
+   *  The sequence of step is: remove_comments(), transform_strings(),
+   *  condensate_rules(), wipe_whitespace(), to_abnf(), to_bnf(), add_prefixes(),
+   *  insert_into_table().
+   */    
+  void add_grammar(const char *grammar_name, const char *syntax_name = NULL);
+
+  //!  Sets the name of the starting nonterminal and the name of the file containing it.
+  void set_start_nonterm(const std::string& start_name, const std::string& start_grammar_name);
+
+  //! Returns entire grammar structure
+  std::multimap<int, std::vector<int> > get_grammar(void)
+  {
+    return m_global_table;
+  }
+
+  //! Returns the name of the specified nonterminal (if it is marked)
+  std::string get_marked_name(int nonterm_number)
+  {
+    if(m_names.count(nonterm_number) > 0)
+      return m_names[nonterm_number].first;
+    else
+      return "";
+  }
+
+  //!Returns the number of the nonterminals
+  unsigned get_nonterm_count(void)
+  {
+    return m_nonterm_count;
+  }
+
+  //!Constructor takes the verbose level.
+  AnyBnfLoad()
+  : m_start_set(false), m_nonterm_count(2)
+  {}
+
+};
+
+#endif  //_ANYBNFLOAD_
+
+// end of file
