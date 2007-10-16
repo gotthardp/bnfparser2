@@ -4,7 +4,7 @@
 TESTFILE=`mktemp` || exit 1
 # remove "telephone-subscriber" to avoid RFC1035 grammar which is not ABNF
 # merge grammars into one and remove references
-cat ../share/specs/rfc2234-6.1.abnf ../share/specs/rfc3261-25.abnf | \
+cat ../share/rfc2234-6.1.abnf ../share/rfc3261-25.abnf | \
     sed -e "s/\/ telephone-subscriber//g" | sed -e "/!import/d" >> $TESTFILE
 ./call-abnfgen sip-message $TESTFILE 50
 rm -f $TESTFILE

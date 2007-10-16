@@ -5,13 +5,13 @@ TESTFILE=`mktemp` || exit 1
 TMPDIR=`mktemp -d` || exit 1
 # generate test files
 abnfgen -d $TMPDIR -s $1 -n ${3:-50} $2
-# combine test-cases into one file, separated by '\0'
-makewords $TMPDIR $TESTFILE
+# combine test-cases into one file, separated by '\xEE'
+./makewords $TMPDIR $TESTFILE
 # remove the test files
 rm -rf $TMPDIR
 
 # execute the parser
-../bnfcheck -v 6 -e 0 $1 $2 < $TESTFILE
+../bnfcheck -v 6 -e 238 $1 $2 < $TESTFILE
 
 RETCODE=$?
 if [ $RETCODE != 0 ]; then

@@ -2,7 +2,7 @@
 
 TESTFILE=`mktemp` || exit 1
 # combine test-cases into one file, separated by '\xEE'
-./makewords $TESTFILE rfc4475
+./makewords rfc4475 $TESTFILE
 # execute tests
 OUTFILE=`mktemp` || exit 1
 ../bnfcheck -v 6 -e 238 sip-message rfc3261-25.abnf < $TESTFILE | tee $OUTFILE

@@ -18,12 +18,18 @@
 ." groff -mandoc -Thtml -P -lr bnfcheck.1 > bnfcheck.html
 ."
 .TH bnfcheck 1 "October 15, 2007" "version 0.1" "USER COMMANDS"
+.
 .SH NAME
 bnfcheck \- check input against a BNF syntax specification
+.
 .SH SYNOPSIS
+.TP
 \fBbnfcheck\fR
-    [\fB--manual-includes\fR] [\fB\-v\fR \fILEVEL\fR]
-    [\fB\-d\fR \fIDIR\fR] [\fB\-e\fR \fINUM\fR] \fISYMBOL\fR ([\fB:\fR[\fIVARIANT\fR]] \fISYNTAX\fR)...
+.br
+[\fB--manual-includes\fR] [\fB\-v\fR \fILEVEL\fR]
+.br
+[\fB\-d\fR \fIDIR\fR] [\fB\-e\fR \fINUM\fR] \fISYMBOL\fR ([\fB:\fR[\fIVARIANT\fR]] \fISYNTAX\fR)...
+.
 .SH DESCRIPTION
 A universal syntax validation utility utilizing a generic BNF-adaptable parser
 (bnfparser2). The parser is generated at run-time depending on given syntax
@@ -53,6 +59,7 @@ parameter.
 .TP
 \fISYNTAX\fR
 Syntax specification. (A file describing the BNF grammar.)
+.
 .SH OPTIONS
 .TP
 \fB\-d\fR \fIDIR\fR
@@ -95,8 +102,10 @@ The following importance levels are defined
 .TP
 \fB--help\fR
 Display a short help text and exit.
+.
 .SH EXIT STATUS
 Returns the number of input words with syntax errors.
+.
 .SH SYNTAX SPECIFICATION
 When searching for a particular \fISYNTAX\fR specification, the list of
 directories specified using \fB\-d\fR \fIDIR\fR is searched and the
@@ -111,7 +120,7 @@ can use only a single \fB!syntax\fR tag.
 .br
 When omitted, the syntax is determined from the \fB:\fR\fIVARIANT\fR command-line
 parameter.
-
+.IP
 Examples:
 .br
 ; !syntax("abnf")
@@ -124,12 +133,13 @@ If \fB--manual-includes\fR is given, all referenced \fISSYNTAX\fR specifications
 must be listed as \fBbnfcheck\fR command-line parameters.
 .br
 Otherwise, all referenced \fISSYNTAX\fR specifications are loaded automatically.
-
+.IP
 Examples:
 .br
 ; !import("ALPHA", "CHAR", "DIGIT", "rfc2234-6.1.abnf")
 .br
 ; !import("<domain>" as "domain", "rfc1035-2.3.abnf")
+.
 .SH VARIANT DEFINITION
 When searching for a particular \fIVARIANT\fR definition, the list of
 directories specified using \fB\-d\fR \fIDIR\fR is searched and the variant
@@ -140,76 +150,76 @@ expressions \fBpcrepattern\fR(3). The following parameters are used:
 .TP
 \fBrulename=\fR\fIregex\fR
 Notation of rule names (nonterminals).
-
+.IP
 Example:
 .br
+.I <ip4-address> ::= 3*<digit>, 3*( \(dq.\(dq, 3*<digit> );
+.br
 rulename=<[a-zA-Z][a-zA-Z0-9\-]*>
-
-\fB<ip4-address>\fR ::= 3*<digit>, 3*( ".", 3*<digit> );
 .TP
 \fBdefined=\fR\fIregex\fR
 Assignment notation used to define a rule.
-
+.IP
 Example:
 .br
+.I <ip4-address> ::= 3*<digit>, 3*( \(dq.\(dq, 3*<digit> );
+.br
 defined=::=
-
-<ip4-address> \fB::=\fR 3*<digit>, 3*( ".", 3*<digit> );
 .TP
 \fBterminal=\fR\fIregex\fR
 Notation used for strings (terminals).
-
+.IP
 Example:
 .br
+.I <ip4-address> ::= 3*<digit>, 3*( \(dq.\(dq, 3*<digit> );
+.br
 terminal="
-
-<ip4-address> ::= 3*<digit>, 3*( \fB"\fR.\fB"\fR, 3*<digit> );
 .TP
 \fBnonterminal=nonterminal\fR
 .TP
 \fBcomment=\fR\fIregex\fR
 Notation used for line comments.
-
+.IP
 Example:
 .br
+.I # An IPv4 address in a dot-decimal notation
+.br
 comment=#
-
-\fB#\fR An IPv4 address in a dot-decimal notation
 .TP
 \fBconcat=\fR\fIregex\fR
 Notation used to express a concatenation.
-
+.IP
 Example:
 .br
+.I <ip4-address> ::= 3*<digit>, 3*( \(dq.\(dq, 3*<digit> );
+.br
 concat=,
-
-<ip4-address> ::= 3*<digit>\fB,\fR 3*( "."\fB,\fR 3*<digit> );
 .TP
 \fBalternative=\fR\fIregex\fR
 Notation used to express an alternative.
 .br
 Note that special characters like `^.[$()|*+?{\' must be in \fIregex\fR escaped
 by `\\'.
-
+.IP
 Example:
 .br
+.I <ip-address> ::= <ip4-address> | <ip6-address>
+.br
 alternative=\\|
-
-<ip-address> ::= <ip4-address> \fB|\fR <ip6-address>
 .PP
 \fBleftgroup=\fR\fIregex\fR
 .br
 \fBrightgroup=\fR\fIregex\fR
 .RS
 Notation used to open and close a sequence group.
-
+.PP
 Example:
+.br
+.I <ip4-address> ::= 3*<digit>, 3*( \(dq.\(dq, 3*<digit> );
 .br
 leftgroup=(
 .br
 rightgroup=)
-
-<ip4-address> ::= 3*<digit>, 3*\fB(\fR ".", 3*<digit> \fB)\fR;
 .RE
 .PP
 \fBleftcomment=\fR\fIregex\fR
@@ -217,19 +227,19 @@ rightgroup=)
 \fBrightcomment=\fR\fIregex\fR
 .RS
 Notation used to start and close a block of comments.
-
+.PP
 Example:
+.br
+.I (* An IPv4 address in a dot-decimal notation *)
 .br
 leftcomment=(*
 .br
 rightcomment=*)
-
-\fB(*\fR An IPv4 address in a dot-decimal notation \fB*)\fR
 .RE
 .TP
 \fBallbrackets=\fR\fIregex\fR
 List of all brackets that may be used.
-
+.IP
 Example:
 .br
 allbrackets=()[]{}
@@ -245,12 +255,13 @@ List of substitutions \fIregex\fR\fB=\fR\fIregex\fR transforming BNF operators
 to ABNF notation defined in RFC 4234.
 .br
 Options and repetitions are transformed to <min>\fB*\fR<max>\fB(\fR...\fB)\fR.
-
+.IP
 Example:
 .br
 [\\1]=0*1(\\1)
 .br
 {\\1}=*(\\1)
+.
 .SH FILES
 .TP
 \fI/usr/share/BnfParser2/rfc*.abnf\fR
@@ -259,19 +270,25 @@ available at www.ietf.org/rfc.
 .TP
 \fI/usr/share/BnfParser2/syntax/*.conf\fR
 Definitions of BNF variants (meta-metasyntax).
+.
 .SH EXAMPLES
 Start parser for SIP messages according to RFC3261. The messages will
 be read from standard input and delimited by ASCII \\0 (zero).
-.PP
+.TP
 \fBbnfcheck\fR \fB\-d\fR share \fB\-e\fR 0 sip-message rfc3261-25.abnf
-.PP
+.TP
 \fBbnfcheck\fR \fB\-d\fR share \fB\-e\fR 0 \fB--manual-includes\fR sip-message \\
-    \fB:\fRabnf rfc3261-25.abnf \fB:\fR rfc2806-2.abnf \fB:\fR rfc2234-6.1.abnf \\
-    \fB:\fRabnf-rfc1035 rfc1035-2.3.abnf
+.br
+\fB:\fRabnf rfc3261-25.abnf \fB:\fR rfc2806-2.abnf \fB:\fR rfc2234-6.1.abnf \\
+.br
+\fB:\fRabnf-rfc1035 rfc1035-2.3.abnf
+.
 .SH SEE ALSO
 \fBbnfparser2\fR(3), \fBregex\fR(7), \fBpcrepattern\fR(3)
+.
 .SH REPORTING BUGS
 Report bugs to <bnfparser2-devel@lists.sourceforge.net>.
+.
 .SH CREDITS
 Institute for Theoretical Computer Science (ITI) research center
 .br
@@ -280,6 +297,7 @@ Faculty of Informatics, Masaryk University Brno
 ANF DATA spol. s r.o.
 .br
 Siemens IT Solutions and Services, PSE Czech Republic
+.
 .SH COPYRIGHT
 Copyright (c) 2007 ANF DATA spol. s r.o.
 .br
