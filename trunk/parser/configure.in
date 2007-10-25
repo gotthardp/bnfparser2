@@ -63,5 +63,5 @@ AC_C_INLINE
 AC_CHECK_FUNCS([strchr strtol])
 AC_CHECK_FUNCS([mkstemp])
 
-AC_CONFIG_FILES([Makefile doc/Makefile src/Makefile share/Makefile])
+AC_CONFIG_FILES([Makefile doc/Makefile src/Makefile share/Makefile samples/Makefile])
 AC_OUTPUT

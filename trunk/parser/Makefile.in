@@ -16,7 +16,7 @@
 # $Id$
 #
 
-subdirectories = doc share src
+subdirectories = doc src share samples
 
 all clean distclean install:
 	@for subdir in $(subdirectories); \
