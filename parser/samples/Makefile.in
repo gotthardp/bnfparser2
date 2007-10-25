@@ -18,53 +18,43 @@
 
 prefix = @prefix@
 exec_prefix = @exec_prefix@
-sysconfdir = @sysconfdir@
 bindir = @bindir@
 libdir = @libdir@
 includedir = @includedir@
-datarootdir = @datarootdir@
-datadir = @datadir@
 
 CC = @CC@
 CXX = @CXX@
 DEFS = @DEFS@
-CPPFLAGS = -ansi -Wall -DDATADIR=\"$(datadir)/BnfParser2\" @CPPFLAGS@
+CPPFLAGS = -ansi -Wall @CPPFLAGS@
 LIBS = @LIBS@
-# note: if you want to use gprof, append "-pg" to CPPFLAGS and LIBS
 
-TARGET = libBnfParser2.so.0
-TARGET_OBJS = LalrTable.o GSS.o Parser.o AnyBnfLoad.o AnyBnfConf.o AnyBnfFile.o BnfParser2.o Debug.o
+TARGETS = ../bnfcheck
 
 DEPENDENCY_FILES = *.cpp
 
-all: $(TARGET)
+all: bnfcheck
 
-$(TARGET): .depend $(TARGET_OBJS)
+# note: to simplify profiling (gprof) the test tool should be linked statically
+../bnfcheck: bnfcheck.o
 	@echo "  LD $(@F)"; \
-	$(CXX) -shared -Wl,-soname,$(TARGET) $(TARGET_OBJS) -o $@; \
-	ln -sf $@ libBnfParser2.so
+	$(CXX) $(LDFLAGS) $^ $(LIBS) -L../src -lBnfParser2 -o $@
 
 %.o: %.cpp
 	@echo "  CXX $<"; \
-	$(CXX) -c $(CPPFLAGS) $(DEFS) $< -o $@
+	$(CXX) -c $(CPPFLAGS) -I../src $(DEFS) $< -o $@
 
 clean:
-	-rm -rf .depend $(TARGET_OBJS) $(TARGET) libBnfParser2.so
+	-rm -rf .depend *.o $(TARGETS)
 
 distclean: clean
-	-rm -rf Makefile config.h
+	-rm -rf Makefile
 
 rebuild: clean all
 
 
-INSTALL_HEADERS = BnfParser2.h
-
 install:
-	mkdir -p $(includedir)
-	cp -pf $(INSTALL_HEADERS) $(includedir)
-	mkdir -p $(libdir)
-	cp -pf $(TARGET) $(libdir)
-	ln -sf $(TARGET) $(libdir)/libBnfParser2.so
+	mkdir -p $(bindir)
+	cp -pf $(TARGETS) $(bindir)
 
 
 .depend dep: $(DEPENDENCY_FILES)
