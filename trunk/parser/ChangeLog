@@ -1,3 +1,8 @@
+2007-10-25  Petr Gotthard  <petr.gotthard@siemens.com>
+    * moved bnfcheck to samples
+    * added web-based interface (bnfweb.cgi)
+    * updated add_start_symbol to automatically determine start_grammar
+
 2007-10-13  Petr Gotthard  <petr.gotthard@siemens.com>
     * simplified command-line interface of bnfcheck
     * added add_search_path() and search path support

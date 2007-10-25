@@ -1,0 +1,177 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+<html>
+<head>
+<title>Syntax verification</title>
+<link rel="stylesheet" type="text/css" href="bnfweb.css">
+</head>
+<body>
+<h1>Syntax verification</h1>
+This is a universal syntax verification utility for syntax specifications
+writen in <a href="http://en.wikipedia.org/wiki/Backus%E2%80%93Naur_form" target="_blank">Backus-Naur Form (BNF)</a>.<br/>
+
+<br/>
+<form method="post" action="bnfweb.cgi" enctype="multipart/form-data">
+
+<table class="query" border="0" width="100%">
+<tr>
+<td rowspan="3" valign="top">
+
+<fieldset><legend><a href="#syntax">Syntax</a> specification to use</legend>
+<table border="0" cellspacing="0" cellpadding="2">
+
+<tr class="grammar" onDblClick="document.getElementsByName('symbol')[0].value='<domain>'">
+<td><input type="checkbox" name="syntax" value="rfc1035-2.3.abnf"/></td>
+<td nowrap>
+<b>Domain Names - Implementation And Specification</b><br/>
+Preferred name syntax<br/>
+rfc1035-2.3.abnf
+</td>
+</tr>
+
+<tr class="grammar" onDblClick="document.getElementsByName('symbol')[0].value='rulelist'">
+<td><input type="checkbox" name="syntax" value="rfc2234-4.abnf"/></td>
+<td nowrap>
+<b>Augmented BNF for Syntax Specifications: ABNF</b><br/>
+ABNF Definition of ABNF<br/>
+rfc2234-4.abnf<br/>
+</td>
+</tr>
+
+<tr class="grammar">
+<td><input type="checkbox" name="syntax" value="rfc2234-6.1.abnf"/></td>
+<td nowrap>
+<b>Augmented BNF for Syntax Specifications: ABNF</b><br/>
+Core Rules<br/>
+rfc2234-6.1.abnf<br/>
+</td>
+</tr>
+
+<tr class="grammar" onDblClick="document.getElementsByName('symbol')[0].value='telephone-url'">
+<td><input type="checkbox" name="syntax" value="rfc2806-2.abnf"/></td>
+<td nowrap>
+<b>URLs for Telephone Calls</b><br/>
+"tel" URL scheme<br/>
+rfc2806-2.abnf<br/>
+</td>
+</tr>
+
+<tr class="grammar" onDblClick="document.getElementsByName('symbol')[0].value='SIP-message'">
+<td><input type="checkbox" name="syntax" value="rfc3261-25.abnf"/></td>
+<td nowrap>
+<b>SIP: Session Initiation Protocol</b><br/>
+Augmented BNF for the SIP Protocol<br/>
+rfc3261-25.abnf<br/>
+</td>
+</tr>
+
+<tr class="grammar" onDblClick="document.getElementsByName('symbol')[0].value='rulelist'">
+<td><input type="checkbox" name="syntax" value="rfc4234-4.abnf"/></td>
+<td nowrap>
+<b>Augmented BNF for Syntax Specifications: ABNF</b><br/>
+ABNF Definition of ABNF<br/>
+rfc4234-4.abnf<br/>
+</td>
+</tr>
+
+<tr class="grammar">
+<td><input type="checkbox" name="syntax" value="rfc4234-B.1.abnf"/></td>
+<td nowrap>
+<b>Augmented BNF for Syntax Specifications: ABNF</b><br/>
+Core Rules<br/>
+rfc4234-B.1.abnf<br/>
+</td>
+</tr>
+
+<tr><td colspan="2"><a href="#syntax-file">and</a><br/>
+<input type="file" name="syntax-file" style="width:100%"/>
+</td></tr>
+</table>
+
+</fieldset>Some specification is not listed here?
+<a href="mailto:bnfparser2-users@lists.sourceforge.net">Tell us.</a>
+</td>
+
+<td width="100%" valign="top">
+<fieldset><legend><a href="#symbol">Symbol</a> to use</legend>
+<table border="0" width="100%">
+<tr><td>
+<input type="text" name="symbol" style="width:100%"/>
+</td></tr>
+</fieldset>
+</table>
+</td></tr>
+
+<tr><td width="100%" valign="top">
+<fieldset><legend><a href="#text">Text</a> to check</legend>
+
+<table border="0" width="100%">
+<tr><td>
+<textarea name="input-text" style="height:100px;width:100%"></textarea>
+</td></tr>
+
+<tr><td>
+or<br/>
+<input type="file" name="input-file" style="width:100%"/>
+</td></tr>
+
+</table>
+
+</fieldset>
+
+</td></tr>
+<tr><td valign="top">
+<input type="submit" name="submit" value="Get Results"/>
+</td></tr>
+
+</table>
+</form>
+
+<p class="credits">Privacy statement: Data you enter in this form will be
+deleted immediately after the completing the verification report.</p>
+
+<hr>
+
+<dl>
+<dt><a name="syntax">Syntax specification to use</a></dt>
+<dd>Select what specifications the text has to conform, and/or upload a
+<a href="#syntax-file">custom syntax specification.</a>
+The pre-defined specifications have been copy-pasted from RFC documents and
+other standards.</dd>
+<dt><a name="symbol">Symbol to use</a></dt>
+<dd>Define what symbol will be checked. The symbol must be defined in one of
+the selected syntax specifications.
+If you double-click some syntax specification, this field will be completed
+with a main symbol from the respective specification.</dd>
+<dt><a name="text">Text to check</a></dt>
+<dd>Define what text should be checked for compliance to selected syntax
+specifcations.</dd>
+</dl>
+
+<p>
+<a name="syntax-file">Custom syntax specification</a> may use
+ABNF variant defined in RFC 2234/4234 (variant "abnf"), or
+ABNF variant used in RFC 1035 (variant "abnf-rfc1035"). If you need more,
+please, <a href="mailto:bnfparser2-users@lists.sourceforge.net">tell us</a>.<br/>
+The specification may contain line comments with the following tags
+(see <a href="http://bnfparser2.sourceforge.net" target="_blank">BNF Parser&sup2;</a>
+documentation for more defails):
+<dl>
+<dt>; !syntax("abnf")</dt>
+<dd>Indicates BNF variant used in the specification. Syntax specifications
+uploaded via this form <b>must</b> include a single !syntax tag.
+The value may be "abnf" or "abnf-rfc1035".</dd>
+<dt>; !import("ALPHA", "CHAR", "DIGIT", "rfc2234-6.1.abnf")</dt>
+<dd>Lists symbol(s) defined in another specification. Syntax specifications
+uploaded via this form may only reference the .abnf specifications listed above.</dd>
+</dl>
+</p>
+
+<br/>
+<p class="credits">
+Powered by <a href="http://bnfparser2.sourceforge.net" target="_blank">BNF Parser&sup2;</a>.
+Credits <a href="http://iti.fi.muni.cz" target="_blank">Institute for Theoretical Computer Science (ITI)</a> research center, Faculty of Informatics, Masaryk University Brno
+and
+<a href="http://www.anfdata.cz" target="_blank">ANF DATA spol. s r.o.</a>, Siemens IT Solutions and Services, PSE Czech Republic.
+</p>
+</body>
+</html>

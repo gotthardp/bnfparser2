@@ -138,7 +138,7 @@ int main(int argc, char  *argv[])
   }
 
   // load start grammar
-  test.set_start_nonterm(symbol, param);
+  test.set_start_symbol(symbol, param);
   test.add_grammar(param, variant);
   // load next grammars
   while(fileind > args.FileCount())

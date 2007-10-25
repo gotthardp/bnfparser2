@@ -1,8 +1,10 @@
 Part A. User Instructions
 =========================
 
-  bnfcheck - A universal syntax validation utility.
+  bnfcheck - Command-line tool for syntax verification.
     See man bnfcheck(1).
+
+  bnfweb.cgi - Web application for syntax verification.
 
 If you need support, please check http://bnfparser2.sourceforge.net, or
 contact <bnfparser2-users@lists.sourceforge.net>.

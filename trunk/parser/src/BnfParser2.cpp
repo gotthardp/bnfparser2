@@ -55,9 +55,9 @@ void BnfParser2::add_referenced_grammars()
   m_core_parser->add_referenced_grammars();
 }
 
-void BnfParser2::set_start_nonterm(const std::string& start_name, const std::string& start_grammar_name)
+void BnfParser2::set_start_symbol(const char *symbol_name, const char *start_grammar_name)
 {
-  m_core_parser->set_start_nonterm(start_name, start_grammar_name);
+  m_core_parser->set_start_symbol(symbol_name, start_grammar_name);
 }
 
 void BnfParser2::build_parser(void)

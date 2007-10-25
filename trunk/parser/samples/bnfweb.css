@@ -1,0 +1,9 @@
+body { font-family:Arial, Geneva, Helvetica; font-size:0.75em; }
+h1 { font-size:large; }
+
+table.query { white-space:nowrap; }
+tr.grammar:hover { background-color:#eeeeee; }
+
+table.sample { background-color:#eeeeee; }
+
+span.marker { font-size:1.25em; color:red; font-weight: bold; }
