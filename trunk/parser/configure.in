@@ -50,6 +50,22 @@ AC_CACHE_CHECK([for pcrecpp library], [ac_have_pcrecpp],[
     ])
 ])
 
+# Check for the cgicc library.
+AC_CACHE_CHECK([for cgicc library], [ac_have_cgicc],[
+    LIBS="$LIBS -lcgicc"
+    AC_LINK_IFELSE(AC_LANG_PROGRAM([
+        #include <cgicc/Cgicc.h>
+    ],[
+        cgicc::Cgicc cgi;
+        cgi.getVersion();
+    ]),[
+        ac_have_cgicc=yes
+    ],[
+        ac_have_cgicc=no
+        AC_MSG_ERROR([The GNU cgicc library is required. Try 'http://www.cgicc.org'.])
+    ])
+])
+
 # Checks for header files.
 AC_CHECK_HEADER([SimpleOpt.h],[],
     AC_MSG_ERROR([The SimpleOpt.h templates are required. Try 'http://code.jellycan.com/simpleopt'.]))
