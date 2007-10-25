@@ -25,23 +25,28 @@ includedir = @includedir@
 CC = @CC@
 CXX = @CXX@
 DEFS = @DEFS@
-CPPFLAGS = -ansi -Wall @CPPFLAGS@
-LIBS = @LIBS@
+CPPFLAGS = -ansi -Wall -I../src @CPPFLAGS@
+LIBS = -L../src -lBnfParser2 @LIBS@
 
-TARGETS = ../bnfcheck
+BNFCHECK_TARGET = ../bnfcheck
+TARGETS = $(BNFCHECK_TARGET) bnfweb.cgi
 
 DEPENDENCY_FILES = *.cpp
 
-all: bnfcheck
+all: .depend $(TARGETS)
 
 # note: to simplify profiling (gprof) the test tool should be linked statically
-../bnfcheck: bnfcheck.o
+$(BNFCHECK_TARGET): bnfcheck.o
 	@echo "  LD $(@F)"; \
-	$(CXX) $(LDFLAGS) $^ $(LIBS) -L../src -lBnfParser2 -o $@
+	$(CXX) $(LDFLAGS) $^ $(LIBS) -o $@
+
+bnfweb.cgi: bnfweb.o
+	@echo "  LD $(@F)"; \
+	$(CXX) $(LDFLAGS) $^ $(LIBS) -lcgicc -o $@
 
 %.o: %.cpp
 	@echo "  CXX $<"; \
-	$(CXX) -c $(CPPFLAGS) -I../src $(DEFS) $< -o $@
+	$(CXX) -c $(CPPFLAGS) $(DEFS) $< -o $@
 
 clean:
 	-rm -rf .depend *.o $(TARGETS)

@@ -40,7 +40,7 @@ class Parser;
  * To use the parser
  * -# Call add_grammar() to load a syntax specification. May be called
  *    multiple times.
- * -# Call set_start_nonterm() to set a starting nonterminal.
+ * -# Call set_start_symbol() to set a start symbol.
  * -# Call build_parser() to process the specifications and build the parser.
  * -# Call parse_word() to parse a word. May be called multiple times.
  * -# Call get_error_position() or get_semantic_string() to obtain results of
@@ -88,16 +88,16 @@ public:
    */
   void add_referenced_grammars(void);
 
-  //! Set a starting nonterminal.
+  //! Set a starting symbol.
   /**
-   * Sets name of a start symbol in the BNF grammar.
+   * Sets name of starting nonterminal in the BNF grammar.
    *
-   * \param[in] start_name Name of the start symbol.
+   * \param[in] symbol_name Name of the start symbol.
    * \param[in] start_grammar_name Syntax specification containing the start symbol.
    *
    * \sa add_grammar(), add_referenced_grammars()
    */
-  void set_start_nonterm(const std::string& start_name, const std::string& start_grammar_name);
+  void set_start_symbol(const char *symbol_name, const char *start_grammar_name = NULL);
 
   //! Process the specifications and build the parser.
   void build_parser(void);

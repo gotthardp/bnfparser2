@@ -101,9 +101,9 @@ public:
   }
 
   //! Sets the name of the starting nonterminal and the name of the file containing it.
-  void set_start_nonterm(const std::string& start_name, const std::string& start_grammar_name)
+  void set_start_symbol(const char *symbol_name, const char *start_grammar_name = NULL)
   {
-    m_grammar.set_start_nonterm(start_name,start_grammar_name);
+    m_grammar.set_start_symbol(symbol_name,start_grammar_name);
   }
 
   //! Calls for add_grammar() for unresolved references

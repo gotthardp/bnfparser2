@@ -24,6 +24,7 @@
 //#define _ANYBNFLOAD_TEST_
 
 #include <vector> 
+#include <list>
 #include <queue> 
 #include <set> 
 #include <string>
@@ -49,24 +50,54 @@ private:
   AnyBnfFile m_grammar;             //!<for manipulation with input file
   AnyBnfConf m_config;              //!<for manipulation with configuration file
 
-  //!Contains the name of the starting nonterminal specified in the global configuration file.
-  std::string m_start_nonterm;
+  //!Contains the name of the starting nonterminal.
+  std::string m_start_symbol;
   
   //!Contains the name of the grammar containing the starting nonterminal.  
   std::string m_start_grammar;
   
   //!Contains the global number of the starting nonterminal.
-  int m_start_nonterm_number;
+  int m_start_symbol_number;
   
   //! Is set to true when the starting nonterminal is set
   bool m_start_set;
-  
-  //!Contains the name of the processed grammar file
-  std::string m_current_grammar;
 
-  //!Contains the numeric identifier of the current grammar file
-  size_t m_current_grammar_id;
-  
+  //!Encapsulation of int, default value is -1 instead of 0.
+  class count 
+  {
+    int i;  //!< the encapsulated number
+  public:
+    count() : i(-1) {};  //!constructor, default value is -1
+    void insert (int ins) {i=ins; }  //!<sets the number's value to ins.
+    int val() const { return i; }  //!<returns the number
+  };
+
+  class GrammarInfo
+  {
+  public:
+    //! Maps names of nonterminals to numbers, stored for each grammar
+    std::map<std::string, count> m_nonterm_names;
+    //! If grammar rulenames are case sensitive
+    bool m_is_case_sensitive;
+
+    int get_nonterm_id(const std::string name) const
+    {
+      std::string temp;
+      if(!m_is_case_sensitive)
+        std::transform(name.begin(), name.end(), std::back_inserter(temp), ::tolower);
+      else
+        temp = name;
+      std::map<std::string, count>::const_iterator pos = m_nonterm_names.find(temp);
+      return (pos != m_nonterm_names.end() ? pos->second.val() : -1);
+    }
+  };
+  typedef std::map<std::string, GrammarInfo> GrammarMap;
+  //! Stores all the grammars added
+  GrammarMap m_grammars;
+
+  //!Contains the name of the processed grammar file
+  GrammarMap::iterator m_current_grammar;
+
   //!This structure stores the dependecies between grammar files.
   /** If the grammar file A contains nonterminal called a_n, which is
    *  defined int the grammar file B, the structure contains the name of
@@ -85,31 +116,19 @@ private:
     dependency() : source_num(-1), dest_num(-1){}
   };
   
-  //!The vector of the dependencies specified if the global configuration file
-  std::vector<dependency> m_dependencies;
+  //!The list of the dependencies specified if the global configuration file
+  std::list<dependency> m_dependencies;
 
-  //!Encapsulation of int, default value is -1 instead of 0.
-  class count 
+  class NonterminalInfo
   {
-    int i;  //!< the encapsulated number
   public:
-    count() : i(-1) {};  //!constructor, default value is -1
-    void insert (int ins) {i=ins; }  //!<sets the number's value to ins.
-    int& val() { return i; }  //!<returns the number
+    std::string m_name;
+    GrammarMap::const_iterator m_grammar; //!< iterator to m_grammars
+    // Note: iterators to map are not invalidated by insertion/removal of other entries.
   };
-
-  //!Maps names of nonterminals to numbers, stored for each grammar
-  std::map<std::string, std::map<std::string, count> > m_nonterm_names;
-
-  //!For each grammar it stores if its rulenames are case sensitive
-  std::map<std::string, bool> m_grammar_case_sensitive;
-  
   //!Maps all the nonterminal numbers back to its original names.
   //!The information is not stored for newly created nonterminals
-  std::map<int, std::pair<std::string, unsigned> > m_names;
-
-  //!Stores the names of all the grammars added
-  std::vector<std::string> m_grammar_names;
+  std::map<int, NonterminalInfo> m_names;
 
   //!Counts nonterminals continuosly (is not reset to 0 after finishing one grammar).
   //!Actually it is one number higher than the real count of the nonterminals
@@ -220,10 +239,10 @@ public:
   void add_grammar(const char *grammar_name, const char *syntax_name = NULL);
 
   //!  Sets the name of the starting nonterminal and the name of the file containing it.
-  void set_start_nonterm(const std::string& start_name, const std::string& start_grammar_name);
+  void set_start_symbol(const char *symbol_name, const char *start_grammar_name = NULL);
 
   //! Returns entire grammar structure
-  std::multimap<int, std::vector<int> > get_grammar(void)
+  const std::multimap<int, std::vector<int> >& get_grammar(void) const
   {
     return m_global_table;
   }
@@ -232,7 +251,7 @@ public:
   std::string get_marked_name(int nonterm_number)
   {
     if(m_names.count(nonterm_number) > 0)
-      return m_names[nonterm_number].first;
+      return m_names[nonterm_number].m_name;
     else
       return "";
   }
