@@ -7,14 +7,17 @@
 <body>
 <h1>Syntax verification</h1>
 This is a universal syntax verification utility for syntax specifications
-writen in <a href="http://en.wikipedia.org/wiki/Backus%E2%80%93Naur_form" target="_blank">Backus-Naur Form (BNF)</a>.<br/>
+writen in <a href="http://en.wikipedia.org/wiki/Backus%E2%80%93Naur_form" target="_blank">Backus-Naur Form (BNF)</a>.
+Select syntax specification(s) and symbol that should be used for verification,
+enter text to verify and click the "Get Results" button. The application checks
+if the text conforms to the syntax specification(s) given.<br/>
 
 <br/>
 <form method="post" action="bnfweb.cgi" enctype="multipart/form-data">
 
-<table class="query" border="0" width="100%">
+<table class="query" border="0">
 <tr>
-<td rowspan="3" valign="top">
+<td rowspan="3" width="50%" valign="top">
 
 <fieldset><legend><a href="#syntax">Syntax</a> specification to use</legend>
 <table border="0" cellspacing="0" cellpadding="2">
@@ -91,7 +94,7 @@ rfc4234-B.1.abnf<br/>
 <a href="mailto:bnfparser2-users@lists.sourceforge.net">Tell us.</a>
 </td>
 
-<td width="100%" valign="top">
+<td width="50%" valign="top">
 <fieldset><legend><a href="#symbol">Symbol</a> to use</legend>
 <table border="0" width="100%">
 <tr><td>
@@ -101,8 +104,8 @@ rfc4234-B.1.abnf<br/>
 </table>
 </td></tr>
 
-<tr><td width="100%" valign="top">
-<fieldset><legend><a href="#text">Text</a> to check</legend>
+<tr><td width="50%" valign="top">
+<fieldset><legend><a href="#text">Text</a> to verify</legend>
 
 <table border="0" width="100%">
 <tr><td>
@@ -127,7 +130,7 @@ or<br/>
 </form>
 
 <p class="credits">Privacy statement: Data you enter in this form will be
-deleted immediately after the completing the verification report.</p>
+removed immediately after the completing the verification report.</p>
 
 <hr>
 
@@ -142,13 +145,13 @@ other standards.</dd>
 the selected syntax specifications.
 If you double-click some syntax specification, this field will be completed
 with a main symbol from the respective specification.</dd>
-<dt><a name="text">Text to check</a></dt>
+<dt><a name="text">Text to verify</a></dt>
 <dd>Define what text should be checked for compliance to selected syntax
 specifcations.</dd>
 </dl>
 
 <p>
-<a name="syntax-file">Custom syntax specification</a> may use
+<b><a name="syntax-file">Custom syntax specification</a></b> may use
 ABNF variant defined in RFC 2234/4234 (variant "abnf"), or
 ABNF variant used in RFC 1035 (variant "abnf-rfc1035"). If you need more,
 please, <a href="mailto:bnfparser2-users@lists.sourceforge.net">tell us</a>.<br/>
@@ -172,6 +175,9 @@ Powered by <a href="http://bnfparser2.sourceforge.net" target="_blank">BNF Parse
 Credits <a href="http://iti.fi.muni.cz" target="_blank">Institute for Theoretical Computer Science (ITI)</a> research center, Faculty of Informatics, Masaryk University Brno
 and
 <a href="http://www.anfdata.cz" target="_blank">ANF DATA spol. s r.o.</a>, Siemens IT Solutions and Services, PSE Czech Republic.
+</p>
+<p class="credits">
+Web interface &copy; 2007 ANF DATA spol. s r.o.
 </p>
 </body>
 </html>

@@ -42,7 +42,8 @@ $(BNFCHECK_TARGET): bnfcheck.o
 
 bnfweb.cgi: bnfweb.o
 	@echo "  LD $(@F)"; \
-	$(CXX) $(LDFLAGS) $^ $(LIBS) -lcgicc -o $@
+	$(CXX) $(LDFLAGS) $^ $(LIBS) -lcgicc -o $@ ;\
+	cp bnfweb.cgi ~/public_html
 
 %.o: %.cpp
 	@echo "  CXX $<"; \
