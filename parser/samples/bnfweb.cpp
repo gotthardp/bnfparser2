@@ -38,6 +38,8 @@ std::ostream& operator <<(std::ostream& out, schar text)
 {
   switch(text.m_ch)
   {
+  case '\t': return out << "<span style=\"margin-left:1.5em\"/>";
+  case ' ': return out << "&nbsp;";
   case '&': return out << "&amp;";
   case '<': return out << "&lt;";
 
@@ -70,6 +72,9 @@ std::ostream& operator <<(std::ostream& out, sstring text)
 
     out << schar(*pos);
   }
+  // visualize markers at the end the text (and beyond)
+  if(text.m_markers.lower_bound(text.m_str.size()) != text.m_markers.end())
+    out << "<span class=\"marker\">&rarr;</span>";
   return out;
 }
 
@@ -197,7 +202,7 @@ int main(int argc, char  *argv[])
   catch(std::exception &err)
   {
     std::cout
-      << "<p>Error<br/>" << err.what() << "</p>" << std::endl;
+      << "<p>Error<br/>" << sstring(err.what()) << "</p>" << std::endl;
   }
 
   struct timeval end_time;
