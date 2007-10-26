@@ -1280,6 +1280,12 @@ void AnyBnfLoad::remove_unreachable (void)
     logTrace(LOG_INFO, "  using start symbol " << m_start_symbol << " from " << m_start_grammar);
     // find start symbol in given start grammar
     m_start_symbol_number = m_grammars[m_start_grammar].get_nonterm_id(m_start_symbol);
+
+    if(m_start_symbol_number == -1)
+    {
+      throw std::runtime_error("Symbol \"" + m_start_symbol
+        + "\" not found in \"" + m_start_grammar + "\" specification");
+    }
   }
   else
   {
@@ -1299,10 +1305,13 @@ void AnyBnfLoad::remove_unreachable (void)
           m_start_symbol_number = idpos;
       }
     }
-  }
 
-  if(m_start_symbol_number == -1)
-    throw std::runtime_error("Start symbol not found");
+    if(m_start_symbol_number == -1)
+    {
+      throw std::runtime_error("Symbol \"" + m_start_symbol
+        + "\" not found in any specification");
+    }
+  }
 
   //inserting starting nonterminal
   right_side.push_back(m_start_symbol_number);
