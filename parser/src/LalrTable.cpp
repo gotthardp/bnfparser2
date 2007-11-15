@@ -880,8 +880,7 @@ void LalrTable::make_lalr_table(void)
   
   logTrace(LOG_INFO, "  computing lookaheads");
   compute_lookaheads();
-  
-  
+
   ////Listing the result
   if(logIsEnabledFor(LOG_DEBUG))
   {

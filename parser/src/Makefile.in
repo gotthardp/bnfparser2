@@ -22,13 +22,11 @@ sysconfdir = @sysconfdir@
 bindir = @bindir@
 libdir = @libdir@
 includedir = @includedir@
-datarootdir = @datarootdir@
-datadir = @datadir@
 
 CC = @CC@
 CXX = @CXX@
 DEFS = @DEFS@
-CPPFLAGS = -ansi -Wall -DDATADIR=\"$(datadir)/BnfParser2\" @CPPFLAGS@
+CPPFLAGS = -ansi -Wall @CPPFLAGS@
 LIBS = @LIBS@
 # note: if you want to use gprof, append "-pg" to CPPFLAGS and LIBS
 

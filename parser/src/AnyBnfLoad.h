@@ -144,9 +144,6 @@ private:
    */
   std::multimap<int, std::vector<int> > m_global_table;
 
-  //!Gives a list of positions of beginings of terminal substrings.
-  std::vector<int> find_term_pos(const std::string& data);
-
   //! A list of paths where grammar and syntax specifications are located.
   std::vector<std::string> m_search_paths;
 

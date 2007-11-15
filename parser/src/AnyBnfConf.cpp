@@ -19,165 +19,139 @@
  */
 
 #include <iostream>
+
+#include "Debug.h"
 #include "AnyBnfConf.h"
-
-std::string AnyBnfConf::extract(void)
-{
-  if(!m_conf_loaded)
-    throw std::runtime_error("File error - file not loaded");
-  
-  if(m_conf_file.good())
-    m_conf_file.getline(read_buffer, m_max_line_length);
-  
-  
-  if (m_operators_flag==false)
-  {
-    char* eq_pos=strchr(read_buffer,'=');
-    if (!eq_pos)
-    {
-       throw std::runtime_error("File error - bad file format");
-    }
-    else
-    strcpy(output,++eq_pos);
-    return(output);   
-  }
-  else
-  {
-    return(read_buffer);
-  }
-}       
-
-bool AnyBnfConf::check_operator(void)
-{
-  if(m_conf_file.good())
-    m_conf_file.getline(read_buffer, m_max_line_length);
-  if (std::string(read_buffer).find("OPERATORS",0)==0) 
-  {
-    return(true);
-  }
-  else
-    return(false);
-} 
 
 void AnyBnfConf::reset(void)
 {
   m_operators.clear();
-  m_operators_max = 0;
-  leftcomment="";
-  rightcomment="";
-  alternative="";
-  comment="";
-  concat="";
-  defined="";
-  leftgroup="";
-  nonterminal="";
-  rightgroup="";
-  rulename="";
-  terminal="";
-  allbrackets="";
-  csstring="";
-  csname="";
-  m_conf_file.clear();
-
+  m_leftcomment.clear();
+  m_rightcomment.clear();
+  m_alternative.clear();
+  m_comment.clear();
+  m_concat.clear();
+  m_defined.clear();
+  m_leftgroup.clear();
+  m_rightgroup.clear();
+  m_rulename.clear();
+  m_terminal.clear();
+  m_allbrackets.clear();
+  m_csstring = false;
+  m_csname = false;
 } 
+
+char* AnyBnfConf::get_next_token(char*& buffer)
+{
+  // skip leading whitespace
+  while(*buffer!=0 && isspace(*buffer)) buffer++;
+  // begin of the token
+  char* token = buffer;
+
+  // find end of the token
+  while(*buffer!=0)
+  {
+    if(isspace(*buffer))
+    {
+      // delimiter found, terminate token and exit
+      *(buffer++) = 0;
+      break;
+    }
+    else buffer++;
+  }
+
+  return token;
+}
 
 bool AnyBnfConf::parse_conf(const std::string& conf_name)
 {
   reset();
-  m_operators_flag=false;
-  m_conf_loaded=false;
-   
-  m_conf_file.open(conf_name.c_str(), std::ios::in | std::ios::binary); 
-  if(!m_conf_file)
+
+  std::fstream conf_file;
+  conf_file.open(conf_name.c_str(), std::ios::in | std::ios::binary); 
+  if(!conf_file)
   {
     throw std::runtime_error("File error - cannot be opened");
   }
-  else m_conf_loaded=true;
-   
+
   std::string text;
-  for (int i=0; i<=13; i++)
+
+  char line[m_max_line_length];
+  bool operator_section = false;
+  // read the configuration file
+  while(conf_file.good())
   {
-    if(m_conf_file.eof())  
+    conf_file.getline(line, m_max_line_length);
+
+    // skip leading whitespace
+    char *text = line;
+    while(*text != 0 && isspace(*text)) text++;
+    // skip empty lines
+    if(*text == 0) continue;
+
+    if(!operator_section)
     {
-      throw std::runtime_error("File error - missing base lines");
+      // skip comments
+      if(*text == '#') continue;
+
+      // The line may contain several '=' characters. The first one is a separator.
+      char* value = strchr(text, '=');
+      if(value != NULL)
+        *(value++) = 0;
+
+      char *name = get_next_token(text);
+      if(name == NULL || *name == 0) continue;
+
+      if(strcasecmp(name, "OPERATORS") == 0)
+      {
+        operator_section = true;
+        continue;
+      }
+
+      if(value == NULL || *value == 0) continue;
+
+      if(strcasecmp(name, "rulename") == 0)
+        m_rulename = value;
+      else if(strcasecmp(name, "defined") == 0)
+        m_defined = value;
+      else if(strcasecmp(name, "terminal") == 0)
+        m_terminal = value;
+      else if(strcasecmp(name, "comment") == 0)
+        m_comment = value;
+      else if(strcasecmp(name, "concat") == 0)
+        m_concat = value;
+      else if(strcasecmp(name, "alternative") == 0)
+        m_alternative = value;
+      else if(strcasecmp(name, "leftgroup") == 0)
+        m_leftgroup = value;
+      else if(strcasecmp(name, "rightgroup") == 0)
+        m_rightgroup = value;
+      else if(strcasecmp(name, "leftcomment") == 0)
+        m_leftcomment = value;
+      else if(strcasecmp(name, "rightcomment") == 0)
+        m_rightcomment = value;
+      else if(strcasecmp(name, "allbrackets") == 0)
+        m_allbrackets = value;
+      else if(strcasecmp(name, "casesensitivestring") == 0)
+        m_csstring = (strcasecmp(value, "true") == 0);
+      else if(strcasecmp(name, "casesensitiverulename") == 0)
+        m_csname = (strcasecmp(value, "true") == 0);
+
+      else
+        logTrace(LOG_WARNING, "unknown configuration parameter " << name);
     }
     else
     {
-      text=extract();
-      if (m_operators_flag==false)
-      {
-        switch(i)
-        {
-          case 0 : rulename=text; break;
-          case 1 : defined=text; break;
-          case 2 : terminal=text; break;
-          case 3 : nonterminal=text; break;
-          case 4 : comment=text; break;
-          case 5 : concat=text; break;
-          case 6 : alternative=text; break;
-          case 7 : leftgroup=text; break;
-          case 8 : rightgroup=text; break;
-          case 9 : leftcomment=text; break;
-          case 10: rightcomment=text; break;
-          case 11: allbrackets=text; break;
-          case 12: csstring=text; break;
-          case 13: csname=text; break;
-        }
-      }
-    }
-  }
-  m_operators_max=0;
-  if (check_operator())
-    m_operators_flag=true;
-  else
-  {
-    throw std::runtime_error("File error - missing OPERATORS word"); 
-  }
-  while (!m_conf_file.eof())   
-  {
-    text=extract();
-    if(text.size() > 0)
-    {
       m_operators.push_back(text);
-      m_operators_max++;
     }
   }
-  m_conf_file.close();
-  
+
   return(true);
 }
 
-std::string AnyBnfConf::get_operators(int num)
+std::string AnyBnfConf::backslash(const std::string& source, int doub)
 {
-  return(m_operators[num]);
-}
-
-std::string AnyBnfConf::get_base(int base_name)
-{
-  switch(base_name)
-  {
-    case 0 : return(rulename);
-    case 1 : return(defined);
-    case 2 : return(terminal);   
-    case 3 : return(nonterminal);       
-    case 4 : return(comment);   
-    case 5 : return(concat);
-    case 6 : return(alternative);       
-    case 7 : return(leftgroup);
-    case 8 : return(rightgroup);  
-    case 9 : return(leftcomment);
-    case 10: return(rightcomment);
-    case 11: return(allbrackets);
-    case 12: return(csstring);
-    case 13: return(csname);
-    default: return("");
-  }
-}
-
-std::string AnyBnfConf::get_base_re(int base_name, int doub)
-{
-  std::string source, result;
-  source = get_base(base_name);
+  std::string result;
   std::string::size_type position, pos_before = 0;
 
   position = source.find_first_of("?|.[]^$()*+{}\\");
@@ -195,45 +169,40 @@ std::string AnyBnfConf::get_base_re(int base_name, int doub)
   return result;
 }
 
-void AnyBnfConf::check_conf(void)
+void AnyBnfConf::check_conf(std::ostream& output)
 {
-  m_output.open("conf_test.txt", std::ios::out | std::ios::binary);
-  for (int i=0; i<=10; i++)
+  output << "rulename='" << m_rulename << "'" << std::endl;
+  output << "defined='" << m_defined << "'" << std::endl;
+  output << "terminal='" << m_terminal << "'" << std::endl;
+  output << "comment='" << m_comment << "'" << std::endl;
+  output << "concat='" << m_concat << "'" << std::endl;
+  output << "alternative='" << m_alternative << "'" << std::endl;
+  output << "leftgroup='" << m_leftgroup << "'" << std::endl;
+  output << "rightgroup='" << m_rightgroup << "'" << std::endl;
+  output << "leftcomment='" << m_leftcomment << "'" << std::endl;
+  output << "rightcomment='" << m_rightcomment << "'" << std::endl;
+  output << "allbrackets='" << m_allbrackets << "'" << std::endl;
+  output << "casesensitivestring=" << ( m_csstring ? "'true'" : "'false'" ) << std::endl;
+  output << "casesensitiverulename=" << ( m_csname ? "'true'" : "'false'" ) << std::endl;
+
+  output << "OPERATORS" << std::endl;
+  for(TOperatorList::const_iterator pos = m_operators.begin();
+    pos != m_operators.end(); pos++)
   {
-    switch(i)
-    {
-      case 0 : m_output << (rulename)<<std::endl; break;
-      case 1 : m_output << (defined)<<std::endl; break;
-      case 2 : m_output << (terminal)<<std::endl; break;
-      case 3 : m_output << (nonterminal)<<std::endl; break;
-      case 4 : m_output << (comment)<<std::endl; break;
-      case 5 : m_output << (concat)<<std::endl; break;
-      case 6 : m_output << (alternative)<<std::endl; break;
-      case 7 : m_output << (leftgroup)<<std::endl; break;
-      case 8 : m_output << (rightgroup)<<std::endl; break;
-      case 9 : m_output << (leftcomment)<<std::endl; break;
-      case 10 : m_output << (rightcomment)<<std::endl; break;
-      case 11 : m_output << (allbrackets)<<std::endl; break;
-      case 12 : m_output << (csstring)<<std::endl; break;
-      case 13 : m_output << (csname)<<std::endl; break;
-    }   
+    output << *pos << std::endl;
   }
-  int j=0;
-  if (!m_operators.empty())
-    while (j<m_operators_max)
-    {
-      m_output << m_operators[j]<<std::endl; j++;
-    }
-  m_output.close(); 
 }
 
 #ifdef _ANYBNFCONF_TEST_
 int main(void)
 {
-    AnyBnfConf hello;
-    hello.parse_conf("test.txt");
-    hello.check_conf();
-    return(0);
+  AnyBnfConf hello;
+  hello.parse_conf("test.txt");
+
+  std::fstream output;
+  output.open("conf_test.txt", std::ios::out | std::ios::binary);
+  hello.check_conf(output);
+  return(0);
 }
 #endif    
 

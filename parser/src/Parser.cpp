@@ -195,12 +195,7 @@ void Parser::shifter(unsigned i, int a_i_plus_1, int a_i_plus_2)
           temp_q.insert(QMember(temp_state, actions->next_state));
         else if(actions->reduce_length == 0)
           m_r.insert(RMember(temp_state, actions->reduce_by, 0, temp_symbol));
-      }
-    
-      for(actions = m_table->get_actions(q_iter->new_state, -a_i_plus_2).begin();
-        actions != m_table->get_actions(q_iter->new_state, -a_i_plus_2).end();
-        actions++)
-      {
+
         if(actions->what == LalrTable::action::reduce && actions->reduce_length > 0)
           m_r.insert(RMember(q_iter->state_node, actions->reduce_by, actions->reduce_length, temp_symbol));
       }

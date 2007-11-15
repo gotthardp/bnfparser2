@@ -21,11 +21,13 @@ exec_prefix = @exec_prefix@
 bindir = @bindir@
 libdir = @libdir@
 includedir = @includedir@
+datarootdir = @datarootdir@
+datadir = @datadir@
 
 CC = @CC@
 CXX = @CXX@
 DEFS = @DEFS@
-CPPFLAGS = -ansi -Wall -I../src @CPPFLAGS@
+CPPFLAGS = -ansi -Wall -I../src -DDATADIR=\"$(datadir)/BnfParser2\" @CPPFLAGS@
 LIBS = -L../src -lBnfParser2 @LIBS@
 
 BNFCHECK_TARGET = ../bnfcheck
