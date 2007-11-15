@@ -79,7 +79,6 @@ void AnyBnfLoad::remove_comments(void)
       //line_comment symbol position
   std::string::size_type lcom_pos=std::string::npos;
       //left_group_comment symbol position
-  std::vector<int> terminals;
 
   // go through the whole grammar file
   while(!m_grammar.end_of_file()||!get_line)
@@ -87,54 +86,62 @@ void AnyBnfLoad::remove_comments(void)
     com_pos=std::string::npos;
     lcom_pos=std::string::npos;
     comment_flag=false;
-    cur_pos=0;
 
-// we need to keep checking the line, until no valid comment symbols are left 
+    // we need to keep checking the line, until no valid comment symbols are left 
     if (get_line)
     {
       current=m_grammar.get_line();
     }
     get_line=false;
 
-    terminals=find_term_pos(current);
-      // terminals is now filed with positions of all occurences of
-  // starting terminal symbols (eg. " in ABNF or C++)
-    
+    std::vector<int> terminals;
+    cur_pos=0;
+    std::string::size_type found;
+    // get a list of positions of beginings of terminal substrings.
+    if(m_config.get_terminal().size() > 0)
+    {
+      while((found=current.find(m_config.get_terminal().c_str(),cur_pos)) != std::string::npos)
+      {
+        terminals.push_back(found);
+        cur_pos=int(found) + m_config.get_terminal().size();
+      }
+    }
+    // terminals is now filed with positions of all occurences of
+    // starting terminal symbols (eg. " in ABNF or C++)
 
+    cur_pos=0;
   // after the next two while cycles the value of com_pos resp. lcom_pos
   // will be equal to the position of first valid
   // comment_line symbol resp. left_group_comment symbol
     while (!comment_flag)
     {
-      com_pos=current.find(m_config.get_base(4).c_str(),cur_pos);
-      std::string::size_type i=0;
+      com_pos=current.find(m_config.get_comment().c_str(),cur_pos);
      
       if (com_pos==std::string::npos)
-      {
         break;
-      }
+
+      std::string::size_type i = 0;
       if (!terminals.empty()) 
       {
-        while ((terminals[i] < int(com_pos)) && (i+1<=terminals.size()))
+        while ((terminals[i] < int(com_pos)) && i < terminals.size())
         {
           i++;
         }
       }
-
 
       if (!(i%2))
       {
         comment_flag=true;
       }
       else
-        cur_pos=com_pos + m_config.get_base(10).size();
+        cur_pos=com_pos + m_config.get_comment().size();
     }
     
     comment_flag=false;
     cur_pos=0;
     while (!comment_flag)
     {
-      lcom_pos=current.find(m_config.get_base(9).c_str(),cur_pos);
+      lcom_pos=current.find(m_config.get_leftcomment().c_str(),cur_pos);
       std::string::size_type i=0;
     
       if (lcom_pos==std::string::npos)
@@ -155,7 +162,7 @@ void AnyBnfLoad::remove_comments(void)
         comment_flag=true;
       }
       else
-        cur_pos=lcom_pos + m_config.get_base(10).size();
+        cur_pos=lcom_pos + m_config.get_leftcomment().size();
     }
 
     // we need to find out, what is first on the line - 
@@ -190,28 +197,6 @@ void AnyBnfLoad::remove_comments(void)
         current=remove_group_comment(current, lcom_pos);
     }
   }
-}
-
-std::vector<int> AnyBnfLoad::find_term_pos(const std::string& data)
-{
-  bool flag=false;
-  int cur_pos=0;
-  std::string::size_type found=std::string::npos;
-  std::vector<int> terminal_pos;
-  while(!flag)
-  {
-    found=data.find(m_config.get_base(2).c_str(),cur_pos);
-    if (found==std::string::npos)
-    {
-      flag=true;
-    }
-    else
-    {
-      terminal_pos.push_back(found);
-      cur_pos=int(found) + m_config.get_base(2).size();
-    }
-  }
-  return(terminal_pos);
 }
 
 void AnyBnfLoad::process_line_comment(const std::string& line, int position)
@@ -276,7 +261,7 @@ std::string AnyBnfLoad::remove_group_comment(std::string line, int position)
     {
       case 0: //The starting state
       {
-        rcom_pos=line.find(m_config.get_base(10).c_str(),position);
+        rcom_pos=line.find(m_config.get_rightcomment().c_str(),position);
         if (rcom_pos==std::string::npos)
           state=1;
         else
@@ -293,7 +278,7 @@ std::string AnyBnfLoad::remove_group_comment(std::string line, int position)
       }
       case 2:
       {
-        rcom_pos=line.find(m_config.get_base(10).c_str(),position);
+        rcom_pos=line.find(m_config.get_rightcomment().c_str(),position);
         if (rcom_pos==std::string::npos)
           state=4;
         else
@@ -302,7 +287,7 @@ std::string AnyBnfLoad::remove_group_comment(std::string line, int position)
       }
       case 3:  //Final state
       {
-        int i=rcom_pos-position+m_config.get_base(10).size();
+        int i=rcom_pos-position+m_config.get_rightcomment().size();
         line.erase(position,i);
         return(line);
       }
@@ -325,26 +310,24 @@ void AnyBnfLoad::condensate_rules(void)
   pcrecpp::RE re_blank("^(\\s)*");
   //blank line (just whitespace (==wsp))
   
-  pcrecpp::RE re_rule_wsp_def("^(\\s)*"+m_config.get_base(0)+"@?(\\s)*"+m_config.get_base(1));
+  pcrecpp::RE re_rule_wsp_def("^(\\s)*"+m_config.get_rulename()+"@?(\\s)*"+m_config.get_defined());
   //line in format <wsp><rulename><wsp><defined><anything else>
   
-  pcrecpp::RE re_def(m_config.get_base(1)); 
+  pcrecpp::RE re_def(m_config.get_defined());
   //is defined symbol on the line?
   
-  pcrecpp::RE re_wsp_def("^(\\s)*"+ (m_config.get_base(1)));  
+  pcrecpp::RE re_wsp_def("^(\\s)*"+ (m_config.get_defined()));
   //line in format <wsp><defined><anything else>
   
-  pcrecpp::RE re_rule_wsp("^(\\s)*"+(m_config.get_base(0))+"@?(\\s)*");  
+  pcrecpp::RE re_rule_wsp("^(\\s)*"+(m_config.get_rulename())+"@?(\\s)*");
   //line in format <rulename><wsp>
 
-  logTrace(LOG_DEBUG, "ENTER Condensate");
   if (m_grammar.end_of_file())
   {
     throw std::runtime_error("Syntax error: Unexpected end of file (1)");
   }
   current=m_grammar.get_line();
 
-  logTrace(LOG_DEBUG, "ENTER Condensate");
   //skip first blank lines
   while (re_blank.FullMatch(current))
   {
@@ -352,12 +335,9 @@ void AnyBnfLoad::condensate_rules(void)
     {
      throw std::runtime_error("Syntax error: Unexpected end of file (2)");
     }
-    logTrace(LOG_DEBUG, "Blank skipped");
     current=m_grammar.get_line();
   }
  
-  logTrace(LOG_DEBUG, "^^ENTER Condensate   "<<current);
-
   //after this if block, string in 'current' variable will have following format:
   //<rulename><?wsp><defined><?anything else>
   if (!re_rule_wsp_def.PartialMatch(current))
@@ -375,14 +355,13 @@ void AnyBnfLoad::condensate_rules(void)
       {
         throw std::runtime_error("Syntax error: Unexpected end of file (4)");
       }
-      logTrace(LOG_DEBUG, "getting new line because of the previous being blank");
       next=m_grammar.get_line();
     }
-    logTrace(LOG_DEBUG, next);
 
     //it has to have the required format
     if (!re_wsp_def.PartialMatch(next))
     {
+      logTrace(LOG_ERR, "unexpected format '" << next << "'");
       throw std::runtime_error("Condensate error 6");
     }
 
@@ -398,46 +377,36 @@ void AnyBnfLoad::condensate_rules(void)
   bool no_next_flag=false;
   bool finished=false;
 
-  logTrace(LOG_DEBUG, "After inicialization");
   while (!finished)
   {
     //FIRST automaton - checks, if the string in 'current' is a complete rule.
 
     //find first non blank line
-    logTrace(LOG_DEBUG, "Enter first Automaton");
     if (!no_next_flag)
     {
-      logTrace(LOG_DEBUG, "fetch new line ... FA");
       next=m_grammar.get_line();
     }
     no_next_flag=false;
 
-    logTrace(LOG_DEBUG, current<<"  <- current next ->  "<<next);
     while ((re_blank.FullMatch(next))&&(!finished))
     {
       if (m_grammar.end_of_file())
       {
         m_grammar.insert_line(current);
         finished=true;
-        logTrace(LOG_DEBUG, "FINISHED HERE");
         continue;
       }
       next=m_grammar.get_line();
-      logTrace(LOG_DEBUG, "Enter first Automaton BLANK MATCH");
     }
     
     if (finished)
-    {
-      logTrace(LOG_DEBUG, "CONTINUE in the 1st automaton");
       continue;
-    }
 
     if (re_rule_wsp_def.PartialMatch(next))
     {
       //both, rulename and definition, are in 'next' line ==> the rule in 'current' is complete
       //so we will write it back and continue
       m_grammar.insert_line(current);
-      logTrace(LOG_DEBUG, "Enter first Automaton RULE MATCH");
 
       current.assign(next);
       continue;
@@ -447,15 +416,12 @@ void AnyBnfLoad::condensate_rules(void)
     //defined sequence and then backtracking (one line at most). Therefore we
     //need just three variables - current, next, lookout.
     
-    logTrace(LOG_DEBUG, "Enter second Automaton");
-    logTrace(LOG_DEBUG, current<<"  <- current next ->  "<<next);
     //first non-blank line into lookout
     if (m_grammar.end_of_file())
     {
       current.append(next);
       m_grammar.insert_line(current);
       finished=true;
-      logTrace(LOG_DEBUG, "FINISHED HERE - blank line SA");
       continue;
     }
     lookout=m_grammar.get_line();
@@ -466,22 +432,18 @@ void AnyBnfLoad::condensate_rules(void)
         current.append(next);
         m_grammar.insert_line(current);
         finished=true;
-        logTrace(LOG_DEBUG, "FINISHED HERE - FULL MATCH SA");
         continue;
       }
 
-      logTrace(LOG_DEBUG, "Load blank into lookahead in SA");
       lookout=m_grammar.get_line();
     }
 
     if (re_def.PartialMatch(lookout))
     { 
-      logTrace(LOG_DEBUG, "re_def.PartialMatch");
-    // if there the defined sequence is in 'lookout' string two options are open:
+      // if there the defined sequence is in 'lookout' string two options are open:
       if (re_rule_wsp_def.PartialMatch(lookout))
       {
         //rulename and definition are both in the 'lookout' line
-        logTrace(LOG_DEBUG, "rulename and definition are both in the 'lookout' line");
         current.append(next);
         m_grammar.insert_line(current);
         current.assign(lookout);
@@ -496,7 +458,6 @@ void AnyBnfLoad::condensate_rules(void)
         {
           throw std::runtime_error("Condensate error 10");
         }
-        logTrace(LOG_DEBUG, "re_wsp_def");
         m_grammar.insert_line(current);
         next.append(lookout);
         current.assign(next);
@@ -507,13 +468,11 @@ void AnyBnfLoad::condensate_rules(void)
     {
       // defined is not on lookout line ==> the string in 'next' still belongs
       // to rule in 'current'. 
-      logTrace(LOG_DEBUG, "else Second Automaton");
       no_next_flag=true;
       current.append(next);
       next.assign(lookout);
     }
   }
-  logTrace(LOG_DEBUG, "PASS SUCCESFULL");
 }
 
 void AnyBnfLoad::wipe_whitespace(void)
@@ -536,13 +495,9 @@ void AnyBnfLoad::transform_strings(void)
   std::ostringstream stream_helper;
   std::string line;
   bool in_string=false;
-  bool case_insensitive=true;
   std::string::size_type position;
   char read_char;
 
-
-  if(m_config.get_base(12) == "true")
-    case_insensitive = false;
   while(!m_grammar.end_of_file())
   {
     line = m_grammar.get_line();
@@ -550,25 +505,26 @@ void AnyBnfLoad::transform_strings(void)
     
     while(position < line.size())
     {
-      if(line.substr(position, m_config.get_base(2).size())==(m_config.get_base(2)))
+      if(m_config.get_terminal().size() > 0 &&
+        line.substr(position, m_config.get_terminal().size()) == m_config.get_terminal())
       {
-        position += m_config.get_base(2).size();
+        position += m_config.get_terminal().size();
         in_string = !in_string;
         if(in_string)
-          stream_helper << m_config.get_base(7);
-        else stream_helper << m_config.get_base(8);
+          stream_helper << m_config.get_leftgroup();
+        else stream_helper << m_config.get_rightgroup();
       }
       else if(!in_string) stream_helper << line.at(position++);
       else
       {
         read_char = line.at(position++);
-        if(isalpha(read_char) && case_insensitive)
+        if(isalpha(read_char) && !m_config.is_csstring())
         {
             read_char = tolower(read_char);
-            stream_helper << m_config.get_base(7) << \
-              "%d" << static_cast<int>(static_cast<unsigned char>(read_char)) << m_config.get_base(6) << \
+            stream_helper << m_config.get_leftgroup() <<
+              "%d" << static_cast<int>(static_cast<unsigned char>(read_char)) << m_config.get_alternative() <<
               "%d" << static_cast<int>(static_cast<unsigned char>(toupper(read_char))) << \
-              m_config.get_base(8);
+              m_config.get_rightgroup();
         }
         else
           stream_helper << "%d" << static_cast<int>(static_cast<unsigned char>(read_char)) << ' ';
@@ -580,7 +536,7 @@ void AnyBnfLoad::transform_strings(void)
   }
   
   if(in_string)
-    throw(std::runtime_error("File error"));
+    throw(std::runtime_error("BNF syntax error: nonterminated string"));
 }
 
 void AnyBnfLoad::transform_names(void)
@@ -597,11 +553,11 @@ void AnyBnfLoad::transform_names(void)
   while(!m_grammar.end_of_file())
   {
     line = m_grammar.get_line();
-    while(term_concat.Replace(m_config.get_base(7) + "%\\1\\2 %\\1\\3\024", &line))
+    while(term_concat.Replace(m_config.get_leftgroup() + "%\\1\\2 %\\1\\3\024", &line))
     {
       while(term_in_progress.Replace("%\\1\\2 %\\1\\3\024", &line))
         ;
-      term_end.Replace(m_config.get_base(8), &line);
+      term_end.Replace(m_config.get_rightgroup(), &line);
     }
     m_grammar.insert_line(line);
   }
@@ -620,7 +576,7 @@ void AnyBnfLoad::transform_names(void)
     line = m_grammar.get_line();
     while(term_range.PartialMatch(line, &bdx, &leftbound, &rightbound))
     {
-      stream_helper << m_config.get_base(7) << ' ';
+      stream_helper << m_config.get_leftgroup() << ' ';
       switch(bdx)
       {
         case 'x':
@@ -642,9 +598,9 @@ void AnyBnfLoad::transform_names(void)
       {
         stream_helper << "%d" << i << ' ';
         if(i < rightb)
-           stream_helper << m_config.get_base(6);
+           stream_helper << m_config.get_alternative();
       }
-      stream_helper << m_config.get_base(8) << ' ';
+      stream_helper << m_config.get_rightgroup() << ' ';
       term_range.Replace(stream_helper.str(),  &line);
       stream_helper.str("");
     }
@@ -679,14 +635,14 @@ void AnyBnfLoad::transform_names(void)
   std::string found_word, found_word_lc;
   std::string at_char;
   //either terminal or nonterminal
-  pcrecpp::RE word("(%?" + m_config.get_base(0) + ")" + "(@?)");
+  pcrecpp::RE word("(%?" + m_config.get_rulename() + ")" + "(@?)");
   pcrecpp::RE term("%d(\\d+)");
-  pcrecpp::RE concat(m_config.get_base(5));
-  pcrecpp::RE def(m_config.get_base_re(1));
+  pcrecpp::RE concat(m_config.get_concat());
+  pcrecpp::RE def(AnyBnfConf::backslash(m_config.get_defined()));
 
-  pcrecpp::RE alternative(m_config.get_base(6));
+  pcrecpp::RE alternative(m_config.get_alternative());
   
-  if(m_config.get_base(13) == "true")
+  if(m_config.is_csname())
     m_current_grammar->second.m_is_case_sensitive = true;
 
   while (!m_grammar.end_of_file())
@@ -707,16 +663,14 @@ void AnyBnfLoad::transform_names(void)
       if(found_word.at(0) == '%')
         continue;
       std::stringstream value;
-      logTrace(LOG_DEBUG, "value of nontermcount => "<< m_nonterm_count);
 
       found_word_lc = found_word;
-      if(m_config.get_base(13) != "true")
+      if(!m_config.is_csname())
       {
           for(unsigned i = 0; i < found_word.size(); i++)
           found_word_lc.at(i) = tolower(found_word_lc.at(i));
       }
 
-      logTrace(LOG_DEBUG, found_word_lc);
       if (m_current_grammar->second.m_nonterm_names[found_word_lc].val()==-1)
       {
         //the found word is found for the first time
@@ -726,6 +680,7 @@ void AnyBnfLoad::transform_names(void)
         m_names[m_nonterm_count].m_name = found_word_lc;
         m_names[m_nonterm_count].m_grammar = m_current_grammar;
 
+        logTrace(LOG_DEBUG, found_word_lc << " => " << m_nonterm_count);
         m_nonterm_count++;
       }
       if(at_char == "") //normal non-terminal
@@ -751,7 +706,7 @@ void AnyBnfLoad::transform_names(void)
   if(m_start_grammar == m_current_grammar)
   {
     found_word = m_start_symbol;
-    if(m_config.get_base(13) != "true")
+    if(!m_config.is_csname())
       for(unsigned i = 0; i < found_word.size(); i++)
         found_word.at(i) = tolower(found_word.at(i));
     m_start_symbol_number = test_table[found_word].val();
@@ -779,7 +734,7 @@ void AnyBnfLoad::transform_names(void)
 
 void AnyBnfLoad::to_abnf(void)
 {
-  std::string oper, pattern, definition;
+  std::string pattern, definition;
   std::vector<pcrecpp::RE *> releft;
   pcrecpp::RE *construct;
   std::vector<std::string> right;
@@ -793,18 +748,18 @@ void AnyBnfLoad::to_abnf(void)
   std::string single_element("\\\\s*(\036[0-9\034]+\037)\\\\s*");
   std::string numbers("\\\\s*([0-9]+)\\\\s*");
   
-  for(int i = 0; i < m_config.get_ops_num(); i++)
+  for(AnyBnfConf::TOperatorList::const_iterator oper = m_config.get_operators().begin();
+    oper != m_config.get_operators().end(); oper++)
   {
     //First we split the rule into pattern and its definition
-    oper = m_config.get_operators(i);
-    position = oper.find("=");
+    position = (*oper).find("=");
     if(position == std::string::npos)
     {
-      logTrace(LOG_DEBUG, "Invalid operator line - skipping...");
+      logTrace(LOG_WARNING, "Skipping invalid operator line");
       continue;
     }
-    pattern = oper.substr(0, position);
-    definition = oper.substr(position + 1);
+    pattern = (*oper).substr(0, position);
+    definition = (*oper).substr(position + 1);
 
     //Then outer whitespace must be deleted
     position = pattern.find_first_not_of("\n\t\r ");
@@ -844,14 +799,14 @@ void AnyBnfLoad::to_abnf(void)
     escaped_seq.GlobalReplace(non_brack_word, &pattern);
     escaped_nums.GlobalReplace(numbers, &pattern);
     escaped_elem.GlobalReplace(single_element, &pattern);
-    logTrace(LOG_DEBUG, pattern << "->" << definition);
+
     construct = new pcrecpp::RE(pattern);
     releft.push_back(construct);
     right.push_back(definition);
   }
-  construct = new pcrecpp::RE(m_config.get_base_re(7) + \
-      "(\\s*(\036[0-9\034]+\037\\s*)+)" + \
-      m_config.get_base_re(8));
+  construct = new pcrecpp::RE(AnyBnfConf::backslash(m_config.get_leftgroup()) +
+      "(\\s*(\036[0-9\034]+\037\\s*)+)" +
+      AnyBnfConf::backslash(m_config.get_rightgroup()));
   releft.push_back(construct);
   right.push_back("\\1");
 
@@ -1039,7 +994,6 @@ void AnyBnfLoad::to_bnf(void)
       for(int i = 0; i < n; i++)
         stream_helper << rule << ' ';
       m_grammar.insert_line(new_name + ' ' + stream_helper.str());
-      logTrace(LOG_DEBUG, new_name + ' ' + stream_helper.str());
       stream_helper.str("");
     }
 
@@ -1051,9 +1005,7 @@ void AnyBnfLoad::to_bnf(void)
       aster_only.Replace(' ' + new_name, &line);
       stream_helper.str("");
       m_grammar.insert_line(new_name);
-      logTrace(LOG_DEBUG, new_name << ' ');
       m_grammar.insert_line(new_name + ' ' + rule + ' ' + new_name);
-      logTrace(LOG_DEBUG, new_name + ' ' + rule + ' ' + new_name);
     }
 
     //Removing <n>*<m> <elem> - like rules
@@ -1073,7 +1025,6 @@ void AnyBnfLoad::to_bnf(void)
       for(int i = m; i <= n ; i++)
       {
         m_grammar.insert_line(new_name + ' ' + stream_helper.str());
-        logTrace(LOG_DEBUG, new_name << ' ' << stream_helper.str());
         stream_helper << rule << ' ';
       }
       stream_helper.str("");
@@ -1089,7 +1040,6 @@ void AnyBnfLoad::to_bnf(void)
       for(int i = 0; i <= m ; i++)
       {
         m_grammar.insert_line(new_name + ' ' + stream_helper.str());
-        logTrace(LOG_DEBUG, new_name << ' ' << stream_helper.str());
         stream_helper << rule << ' ';
       }
     }
@@ -1106,19 +1056,16 @@ void AnyBnfLoad::to_bnf(void)
         stream_helper << rule << ' ';
       stream_helper << '\036' << m_nonterm_count << '\037';
       m_grammar.insert_line(stream_helper.str());
-      logTrace(LOG_DEBUG, stream_helper.str());
       stream_helper.str("");
       stream_helper << '\036' << m_nonterm_count<< '\037' << ' ';
       m_grammar.insert_line(stream_helper.str());
-      logTrace(LOG_DEBUG, stream_helper.str());
       stream_helper << rule << ' ' << '\036' << m_nonterm_count++ << '\037';
       m_grammar.insert_line(stream_helper.str());
-      logTrace(LOG_DEBUG, stream_helper.str());
       stream_helper.str("");
     }
-    m_grammar.insert_line(line);
-    
+
     logTrace(LOG_DEBUG, line);
+    m_grammar.insert_line(line);
   }
   m_grammar.swap();
 
@@ -1138,12 +1085,9 @@ void AnyBnfLoad::to_bnf(void)
       line = line.substr(position + 1);
       position = line.find("\035");
       m_grammar.insert_line(new_name + rule);
-      logTrace(LOG_DEBUG, new_name + rule);
     }
     m_grammar.insert_line(new_name + line);
-    logTrace(LOG_DEBUG, new_name + line);
   }
-    
 }
 
 void AnyBnfLoad::insert_into_table(void)
@@ -1521,6 +1465,7 @@ void AnyBnfLoad::add_grammar(const char *grammar_name, const char *syntax_name)
   // load grammar syntax confinguration
   logTrace(LOG_INFO, "  loading configuration: " << syntax_filename);
   m_config.parse_conf(syntax_filename);
+//  m_config.check_conf(std::cout); // debugging output
 
   logTrace(LOG_INFO, "  processing comments");
   remove_comments();
