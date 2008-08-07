@@ -26,7 +26,7 @@ includedir = @includedir@
 CC = @CC@
 CXX = @CXX@
 DEFS = @DEFS@
-CPPFLAGS = -ansi -Wall @CPPFLAGS@
+CPPFLAGS = -ansi -Wall -fPIC @CPPFLAGS@
 LIBS = @LIBS@
 # note: if you want to use gprof, append "-pg" to CPPFLAGS and LIBS
 

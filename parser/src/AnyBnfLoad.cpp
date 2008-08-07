@@ -123,10 +123,8 @@ void AnyBnfLoad::remove_comments(void)
       std::string::size_type i = 0;
       if (!terminals.empty()) 
       {
-        while ((terminals[i] < int(com_pos)) && i < terminals.size())
-        {
+        while (i < terminals.size() && terminals[i] < int(com_pos))
           i++;
-        }
       }
 
       if (!(i%2))
@@ -632,7 +630,7 @@ void AnyBnfLoad::transform_names(void)
 
 
   std::string current;
-  std::string found_word, found_word_lc;
+  std::string found_word;
   std::string at_char;
   //either terminal or nonterminal
   pcrecpp::RE word("(%?" + m_config.get_rulename() + ")" + "(@?)");
@@ -641,9 +639,6 @@ void AnyBnfLoad::transform_names(void)
   pcrecpp::RE def(AnyBnfConf::backslash(m_config.get_defined()));
 
   pcrecpp::RE alternative(m_config.get_alternative());
-  
-  if(m_config.is_csname())
-    m_current_grammar->second.m_is_case_sensitive = true;
 
   while (!m_grammar.end_of_file())
   {
@@ -664,34 +659,31 @@ void AnyBnfLoad::transform_names(void)
         continue;
       std::stringstream value;
 
-      found_word_lc = found_word;
-      if(!m_config.is_csname())
+      std::map<std::string, count>::const_iterator pos =
+        m_current_grammar->second.m_nonterm_names.find(found_word);
+      // the found word is found for the first time
+      if (pos == m_current_grammar->second.m_nonterm_names.end())
       {
-          for(unsigned i = 0; i < found_word.size(); i++)
-          found_word_lc.at(i) = tolower(found_word_lc.at(i));
-      }
+        // m_nonterm_count now contains numeric identifier of the nonterminal
+        pos = m_current_grammar->second.m_nonterm_names.insert(
+          std::pair<const std::string, count>(found_word, m_nonterm_count)).first;
 
-      if (m_current_grammar->second.m_nonterm_names[found_word_lc].val()==-1)
-      {
-        //the found word is found for the first time
-        //m_nonterm_count now contains numeric identifier of the nonterminal
-        m_current_grammar->second.m_nonterm_names[found_word_lc].insert(m_nonterm_count);
-
-        m_names[m_nonterm_count].m_name = found_word_lc;
+        m_names[m_nonterm_count].m_name = found_word;
         m_names[m_nonterm_count].m_grammar = m_current_grammar;
 
-        logTrace(LOG_DEBUG, found_word_lc << " => " << m_nonterm_count);
+        logTrace(LOG_DEBUG, found_word << " => " << m_nonterm_count);
         m_nonterm_count++;
       }
+
       if(at_char == "") //normal non-terminal
         value << '\036'
-              << m_current_grammar->second.m_nonterm_names[found_word_lc].val()
+              << (int)pos->second
               << '\037';
         
       else   //marked non-terminal
       {
         value << '\036' 
-              << INT_MAX - m_current_grammar->second.m_nonterm_names[found_word_lc].val()
+              << INT_MAX - (int)pos->second
               << '\037';
       }
       //replace the previously found occurence of the found word with the appropriate number on
@@ -706,10 +698,7 @@ void AnyBnfLoad::transform_names(void)
   if(m_start_grammar == m_current_grammar)
   {
     found_word = m_start_symbol;
-    if(!m_config.is_csname())
-      for(unsigned i = 0; i < found_word.size(); i++)
-        found_word.at(i) = tolower(found_word.at(i));
-    m_start_symbol_number = test_table[found_word].val();
+    m_start_symbol_number = test_table[found_word];
     if(m_start_symbol_number == -1)
       throw (std::runtime_error("File error - missing starting nonterminal"));
   }
@@ -722,12 +711,12 @@ void AnyBnfLoad::transform_names(void)
     if(m_dependencies.at(i).source_grammar == m_current_grammar)
     {
       logTrace(LOG_DEBUG, "Got left side " << m_dependencies.at(i).nonterm);
-      m_dependencies.at(i).source_num = test_table[m_dependencies.at(i).nonterm].val();
+      m_dependencies.at(i).source_num = test_table[m_dependencies.at(i).nonterm];
     }
     if(m_dependencies.at(i).dest_grammar == m_current_grammar)
     {
       logTrace(LOG_DEBUG, "Got right side " << m_dependencies.at(i).nonterm);
-      m_dependencies.at(i).dest_num = test_table[m_dependencies.at(i).nonterm].val();
+      m_dependencies.at(i).dest_num = test_table[m_dependencies.at(i).nonterm];
     }
   }*/
 }
@@ -1223,7 +1212,7 @@ void AnyBnfLoad::remove_unreachable (void)
   {
     logTrace(LOG_INFO, "  using start symbol " << m_start_symbol << " from " << m_start_grammar);
     // find start symbol in given start grammar
-    m_start_symbol_number = m_grammars[m_start_grammar].get_nonterm_id(m_start_symbol);
+    m_start_symbol_number = get_nonterm_id(m_start_grammar, m_start_symbol);
 
     if(m_start_symbol_number == -1)
     {
@@ -1235,12 +1224,12 @@ void AnyBnfLoad::remove_unreachable (void)
   {
     m_start_symbol_number = -1;
     // search start symbol in grammar files
-    for(std::map<std::string, GrammarInfo>::const_iterator pos = m_grammars.begin();
+    for(std::map<std::string, GrammarInfo>::iterator pos = m_grammars.begin();
       pos != m_grammars.end(); pos++)
     {
       logTrace(LOG_INFO, "  looking for symbol " << m_start_symbol << " in " << pos->first);
       int idpos;
-      if((idpos = pos->second.get_nonterm_id(m_start_symbol)) != -1)
+      if((idpos = pos->second.m_nonterm_names[m_start_symbol]) != -1)
       {
         logTrace(LOG_INFO, "  symbol " << m_start_symbol << " found in " << pos->first);
         if(m_start_symbol_number != -1)
@@ -1272,8 +1261,8 @@ void AnyBnfLoad::remove_unreachable (void)
     }
     else
     {
-      pos->source_num = m_grammars[pos->source_grammar].get_nonterm_id(pos->source_nonterm);
-      pos->dest_num = m_grammars[pos->dest_grammar].get_nonterm_id(pos->dest_nonterm);
+      pos->source_num = get_nonterm_id(pos->source_grammar, pos->source_nonterm);
+      pos->dest_num = get_nonterm_id(pos->dest_grammar, pos->dest_nonterm);
 
       if(pos->source_num == -1)
       {
@@ -1389,7 +1378,7 @@ void AnyBnfLoad::add_referenced_grammars()
   for(std::list<AnyBnfLoad::dependency>::const_iterator pos = m_dependencies.begin();
     pos != m_dependencies.end(); pos++)
   {
-    if(m_grammars[pos->dest_grammar].m_nonterm_names.empty())
+    if(m_grammars.find(pos->dest_grammar) == m_grammars.end())
     {
       logTrace(LOG_INFO, "  load " << pos->dest_grammar << " referenced from " << pos->source_grammar);
       // load referenced grammar
@@ -1402,9 +1391,6 @@ void AnyBnfLoad::add_referenced_grammars()
 void AnyBnfLoad::add_grammar(const char *grammar_name, const char *syntax_name)
 {
   std::string line_test;
-
-  // insert new grammar to the list, get iterator to the entry
-  m_current_grammar = m_grammars.insert(GrammarMap::value_type(grammar_name, GrammarInfo())).first;
 
   logTrace(LOG_INFO, "## File processing start ##");
 
@@ -1466,6 +1452,10 @@ void AnyBnfLoad::add_grammar(const char *grammar_name, const char *syntax_name)
   logTrace(LOG_INFO, "  loading configuration: " << syntax_filename);
   m_config.parse_conf(syntax_filename);
 //  m_config.check_conf(std::cout); // debugging output
+
+  // insert new grammar to the list, get iterator to the entry
+  m_current_grammar = m_grammars.insert(
+    GrammarMap::value_type(grammar_name, GrammarInfo(m_config.is_csname()))).first;
 
   logTrace(LOG_INFO, "  processing comments");
   remove_comments();

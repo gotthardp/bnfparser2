@@ -1,11 +1,11 @@
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
 <html>
 <head>
-<title>Syntax verification</title>
+<title>The BNF Verification Service</title>
 <link rel="stylesheet" type="text/css" href="bnfweb.css">
 </head>
 <body>
-<h1>Syntax verification</h1>
+<h1>The BNF Verification Service</h1>
 This is a universal syntax verification utility for syntax specifications
 writen in <a href="http://en.wikipedia.org/wiki/Backus%E2%80%93Naur_form" target="_blank">Backus-Naur Form (BNF)</a>.
 Select syntax specification(s) and symbol that should be used for verification,
@@ -40,7 +40,7 @@ rfc2234-4.abnf<br/>
 </td>
 </tr>
 
-<tr class="grammar">
+<tr class="grammar" onDblClick="document.getElementsByName('symbol')[0].value=''">
 <td><input type="checkbox" name="syntax" value="rfc2234-6.1.abnf"/></td>
 <td nowrap>
 <b>Augmented BNF for Syntax Specifications: ABNF</b><br/>
@@ -76,7 +76,7 @@ rfc4234-4.abnf<br/>
 </td>
 </tr>
 
-<tr class="grammar">
+<tr class="grammar" onDblClick="document.getElementsByName('symbol')[0].value=''">
 <td><input type="checkbox" name="syntax" value="rfc4234-B.1.abnf"/></td>
 <td nowrap>
 <b>Augmented BNF for Syntax Specifications: ABNF</b><br/>

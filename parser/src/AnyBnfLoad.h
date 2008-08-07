@@ -67,30 +67,66 @@ private:
   {
     int i;  //!< the encapsulated number
   public:
-    count() : i(-1) {};  //!constructor, default value is -1
-    void insert (int ins) {i=ins; }  //!<sets the number's value to ins.
-    int val() const { return i; }  //!<returns the number
+    count(int val = -1) : i(val) {};  //!constructor, default value is -1
+
+    //!<sets the number's value to val.
+    count& operator = (int val)
+    {
+      i = val;
+      return *this;
+    }
+
+    operator int() const { return i; }  //!<returns the number
   };
 
   class GrammarInfo
   {
   public:
-    //! Maps names of nonterminals to numbers, stored for each grammar
-    std::map<std::string, count> m_nonterm_names;
-    //! If grammar rulenames are case sensitive
-    bool m_is_case_sensitive;
-
-    int get_nonterm_id(const std::string name) const
+    struct ltstr : public std::binary_function<std::string, std::string, bool>
     {
-      std::string temp;
-      if(!m_is_case_sensitive)
-        std::transform(name.begin(), name.end(), std::back_inserter(temp), ::tolower);
-      else
-        temp = name;
-      std::map<std::string, count>::const_iterator pos = m_nonterm_names.find(temp);
-      return (pos != m_nonterm_names.end() ? pos->second.val() : -1);
-    }
+      struct nocase_compare : public std::binary_function<unsigned char, unsigned char, bool>
+      {
+        bool operator() (const unsigned char& c1, const unsigned char& c2) const
+        { return tolower(c1) < tolower(c2); };
+      };
+
+      bool operator() (const std::string& s1, const std::string& s2) const
+      {
+        if(m_is_case_sensitive)
+          return s1 < s2;
+        else
+          return std::lexicographical_compare(
+            s1.begin(), s1.end(), s2.begin(), s2.end(), nocase_compare());
+      }
+
+      ltstr(bool cs)
+       : m_is_case_sensitive(cs) {}
+
+      //! If grammar rulenames are case sensitive
+      bool m_is_case_sensitive;
+    };
+
+    GrammarInfo(bool cs)
+     : m_nonterm_names(ltstr(cs)) {}
+
+    typedef std::map<std::string, count, ltstr> NontermMap;
+    //! Maps names of nonterminals to numbers, stored for each grammar
+    NontermMap m_nonterm_names;
   };
+
+  int get_nonterm_id(const std::string& grammar, const std::string& nonterm) const
+  {
+    GrammarMap::const_iterator gpos = m_grammars.find(grammar);
+    if(gpos != m_grammars.end())
+    {
+      GrammarInfo::NontermMap::const_iterator npos = gpos->second.m_nonterm_names.find(nonterm);
+      if(npos != gpos->second.m_nonterm_names.end())
+        return (int)npos->second;
+    }
+
+    return -1;
+  }
+
   typedef std::map<std::string, GrammarInfo> GrammarMap;
   //! Stores all the grammars added
   GrammarMap m_grammars;
