@@ -139,6 +139,13 @@ Examples:
 ; !import("ALPHA", "CHAR", "DIGIT", "rfc2234-6.1.abnf")
 .br
 ; !import("<domain>" as "domain", "rfc1035-2.3.abnf")
+.TP
+\fB!import(\fR\fISSYNTAX\fR)
+imports all symbols defined in a specification \fISSYNTAX\fR.
+.IP
+Examples:
+.br
+; !import("rfc2234-6.1.abnf")
 .
 .SH VARIANT DEFINITION
 When searching for a particular \fIVARIANT\fR definition, the list of
