@@ -78,6 +78,35 @@ std::ostream& operator <<(std::ostream& out, sstring text)
   return out;
 }
 
+class LocalReporter : public BnfReporter
+{
+public:
+  virtual void on_error(BnfReporter::ErrorTypes code, const std::string& text)
+  {
+    switch(code)
+    {
+      case BnfReporter::ErrorType_Fatal:
+        std::cout << "<p class=\"error\">Fatal Error: ";
+        break;
+      case BnfReporter::ErrorType_Error:
+      default:
+        std::cout << "<p class=\"error\">Error: ";
+        break;
+      case BnfReporter::ErrorType_Warning:
+        std::cout << "<p class=\"error\">Warning: ";
+        break;
+    }
+
+    for(std::string::const_iterator pos = text.begin();
+      pos != text.end(); pos++)
+    {
+      std::cout << schar(*pos);
+    }
+
+    std::cout << "</p>" << std::endl;
+  }
+};
+
 int main(int argc, char  *argv[])
 {
   cgicc::Cgicc cgi;
@@ -97,6 +126,10 @@ int main(int argc, char  *argv[])
   {
     // instantiate the parser
     BnfParser2 test;
+    // instantiate the reporter
+    LocalReporter reporter;
+    test.set_reporter(&reporter);
+
 //    test.set_verbose_level(6);
     test.add_search_path("share");
 
@@ -109,9 +142,24 @@ int main(int argc, char  *argv[])
       << "Symbol: " << sstring(symbol->getValue()) << "<br/>" << std::endl;
     test.set_start_symbol(symbol->getValue().c_str());
 
+    std::vector<cgicc::FormFile> file_list = cgi.getFiles();
+
+    std::vector<cgicc::const_file_iterator> syntax_files;
+    for(cgicc::const_file_iterator pos = file_list.begin();
+      pos != file_list.end(); pos++)
+    {
+      // extract all files with the given prefix
+      if(strncmp(pos->getName().c_str(), "syntax-file", 11) == 0)
+        syntax_files.push_back(pos);
+    }
+
     std::vector<cgicc::FormEntry> syntax_list;
     if(!cgi.getElement("syntax", syntax_list))
-      throw std::runtime_error("No syntax to check");
+    {
+      // no checkboxes selected, check for uploaded file
+      if(syntax_files.empty())
+        throw std::runtime_error("No syntax to check");
+    }
 
     std::cout
       << "Specifications:";
@@ -123,10 +171,10 @@ int main(int argc, char  *argv[])
       test.add_grammar(pos->getValue().c_str());
     }
 
-    cgicc::const_file_iterator syntax_file = cgi.getFile("syntax-file");
-    if(syntax_file != cgi.getFiles().end())
+    for(std::vector<cgicc::const_file_iterator>::const_iterator pos = syntax_files.begin();
+      pos != syntax_files.end(); pos++)
     {
-      std::cout << " upload:" << sstring(syntax_file->getFilename());
+      std::cout << " upload:" << sstring((*pos)->getFilename());
       const char *tmpdir_s;
       if((tmpdir_s = getenv("TMPDIR")) == NULL &&
         (tmpdir_s = getenv("TMP")) == NULL &&
@@ -152,14 +200,15 @@ int main(int argc, char  *argv[])
       try
       {
         std::ofstream tmpfile(tmpname, std::ios::out | std::ios::trunc);
-        syntax_file->writeToStream(tmpfile);
+        (*pos)->writeToStream(tmpfile);
         tmpfile.close();
 
         test.add_grammar(tmpname);
+        // keep privacy of the users: make sure the temporary files are deleted
+        remove(tmpname);
       }
       catch(...)
       {
-        // keep privacy of the users: make sure the temporary files are deleted
         remove(tmpname);
         throw;
       }
@@ -169,40 +218,53 @@ int main(int argc, char  *argv[])
     test.add_referenced_grammars();
     test.build_parser();
 
+    std::vector<std::string> words;
+    // get the input text
     cgicc::const_form_iterator input_text = cgi.getElement("input-text");
-    cgicc::const_file_iterator input_file = cgi.getFile("input-file");
-
-    std::string word;
-    // load the input word
     if(input_text != cgi.getElements().end() && !input_text->getValue().empty())
-      word = input_text->getValue();
-    else if(input_file != cgi.getFiles().end())
-      word = input_file->getData();
-    else
+      words.push_back(input_text->getValue());
+    // get the input files
+    for(cgicc::const_file_iterator pos = file_list.begin();
+      pos != file_list.end(); pos++)
+    {
+      // extract all files with the given prefix
+      if(strncmp(pos->getName().c_str(), "input-file", 10) == 0)
+        words.push_back(pos->getData());
+    }
+
+    if(words.empty())
       throw std::runtime_error("No text to check");
 
-    std::set<int> errorpos;
-    if(test.parse_word(word))
+    for(std::vector<std::string>::const_iterator pos = words.begin();
+      pos != words.end(); pos++)
     {
-      std::cout
-        << "Correct.<br/>"
-        << "<table class=\"sample\"><tr><td>"
-        << sstring(word)
-        << "</td></tr></table>" << std::endl;
-    }
-    else
-    {
-      std::cout
-        << "Syntax error at position " << test.get_error_position()+1 << ".<br/>" << std::endl
-        << "<table class=\"sample\"><tr><td>"
-        << sstring(word, test.get_error_position())
-        << "</td></tr></table>" << std::endl;
+      std::set<int> errorpos;
+      if(test.parse_word(*pos))
+      {
+        std::cout
+          << "<p class=\"result\">"
+          << "Correct.<br/>"
+          << "<table class=\"sample\"><tr><td>"
+          << sstring(*pos)
+          << "</td></tr></table>"
+          << "</p>" << std::endl;
+      }
+      else
+      {
+        std::cout
+          << "<p class=\"result\">"
+          << "Syntax error at position " << test.get_error_position()+1 << ".<br/>" << std::endl
+          << "<table class=\"sample\"><tr><td>"
+          << sstring(*pos, test.get_error_position())
+          << "</td></tr></table>"
+          << "</p>" << std::endl;
+      }
     }
   }
   catch(std::exception &err)
   {
     std::cout
-      << "<p>Error<br/>" << sstring(err.what()) << "</p>" << std::endl;
+      << "<p class=\"error\">Exception<br/>" << sstring(err.what()) << "</p>" << std::endl;
   }
 
   struct timeval end_time;

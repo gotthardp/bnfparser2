@@ -18,7 +18,61 @@
  */
 
 #include <iostream>
+
+#include "BnfParser2.h"
 #include "AnyBnfFile.h"
+
+AnyBnfFile::AnyBnfFile(BnfParser2 *interface)
+ : m_interface(interface)
+{
+  m_rw_state = false;
+  m_first_entry = true;
+  m_file_loaded = false;
+  m_temp1_created = false;
+  m_temp2_created = false;
+
+  const char *tmpdir_s;
+  if((tmpdir_s = getenv("TMPDIR")) == NULL &&
+    (tmpdir_s = getenv("TMP")) == NULL &&
+    (tmpdir_s = getenv("TEMP")) == NULL)
+#ifdef _WIN32
+    tmpdir_s = ".";
+#else
+    tmpdir_s = "/tmp";
+#endif
+  strncpy(m_temp1, tmpdir_s, sizeof(m_temp1)-1);
+  strncpy(m_temp2, tmpdir_s, sizeof(m_temp2)-1);
+  strncat(m_temp1, "/parser_XXXXXX", sizeof(m_temp1)-strlen(m_temp1)-1);
+  strncat(m_temp2, "/parser_XXXXXX", sizeof(m_temp2)-strlen(m_temp2)-1);
+#if !defined(_WIN32) && defined(HAVE_MKSTEMP)
+  int fd = -1;
+  // create and close temporary files
+  if(((fd = mkstemp(m_temp1)) == -1 || close(fd) != 0) ||
+    ((fd = mkstemp(m_temp2)) == -1 || close(fd) != 0))
+#else
+  // create temporary files
+  if(mktemp(m_temp1) == NULL || mktemp(m_temp2) == NULL)
+#endif
+  {
+    BnfReport report(m_interface->get_reporter(), BnfReporter::ErrorType_Fatal);
+    report.text()
+      << "Cannot create " << m_temp1 << " and " << m_temp2;
+    throw std::runtime_error("Temporary files cannot be created.");
+  }
+}
+
+AnyBnfFile::~AnyBnfFile()
+{
+  if(m_file_loaded)
+  {
+    m_input.close();
+    m_output.close();
+  }
+  if(m_temp1_created)
+    remove(m_temp1);
+  if(m_temp2_created)
+    remove(m_temp2);
+}
 
 void AnyBnfFile::load_file(const std::string& name)
 {
@@ -150,7 +204,6 @@ void AnyBnfFile::write_back(void)
   
   m_input.close();
   m_output.close();
-
 }
 
 #ifdef _ANYBNFFILE_TEST_

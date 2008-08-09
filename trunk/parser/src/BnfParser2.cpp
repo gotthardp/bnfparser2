@@ -32,7 +32,8 @@
 
 BnfParser2::BnfParser2(void)
 {
-  m_core_parser = new Parser();
+  m_core_parser = new Parser(this);
+  m_reporter = NULL;
 }
 
 BnfParser2::~BnfParser2(void)

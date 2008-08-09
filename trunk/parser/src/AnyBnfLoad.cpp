@@ -21,6 +21,7 @@
 #include <iostream>
 #include <sys/stat.h>
 
+#include "BnfParser2.h"
 #include "Debug.h"
 #include "AnyBnfLoad.h"
 
@@ -201,8 +202,8 @@ void AnyBnfLoad::process_line_comment(const std::string& line, int position)
 {
   std::string comment;
   std::string help_string;
-  // reference = "!import(" 1*( destination-nonterminal [ "as" source-nonterminal ] "," ) filename ")"
-  pcrecpp::RE re_dep("!import\\(\\s*((\"[^\"]+\"\\s*(?:\\s*as\\s*\"[^\"]+\"\\s*)?\\s*,\\s*)+)\"([^\"]+)\"\\s*\\)");
+  // reference = "!import(" *( destination-nonterminal [ "as" source-nonterminal ] "," ) filename ")"
+  pcrecpp::RE re_dep("!import\\(\\s*((\"[^\"]+\"\\s*(?:\\s*as\\s*\"[^\"]+\"\\s*)?\\s*,\\s*)*)\"([^\"]+)\"\\s*\\)");
   pcrecpp::RE re_nonterm("^\"([^\"]+)\"\\s*(?:\\s*as\\s*\"([^\"]+)\"\\s*)?\\s*,\\s*");
   dependency curr_dep;
 
@@ -214,11 +215,21 @@ void AnyBnfLoad::process_line_comment(const std::string& line, int position)
   std::string ignored; // this parameter is not used (for now)
   if(re_dep.PartialMatch(comment, &help_string, &ignored, &(curr_dep.dest_grammar)))
   {
+    curr_dep.source_grammar = m_current_grammar->first;
+
+    if(help_string.empty())
+    {
+      logTrace(LOG_INFO, "    Import: "
+        << "all symbols in " << curr_dep.dest_grammar << " to " << curr_dep.source_grammar);
+
+      m_dependencies.push_back(curr_dep);
+      return;
+    }
+
     while(re_nonterm.PartialMatch(help_string, &(curr_dep.dest_nonterm), &(curr_dep.source_nonterm)))
     {
       re_nonterm.Replace("", &help_string);
 
-      curr_dep.source_grammar = m_current_grammar->first;
       // by default, source and destination nonterminal are identical
       if(curr_dep.source_nonterm.empty())
       {
@@ -744,7 +755,9 @@ void AnyBnfLoad::to_abnf(void)
     position = (*oper).find("=");
     if(position == std::string::npos)
     {
-      logTrace(LOG_WARNING, "Skipping invalid operator line");
+      BnfReport report(m_interface->get_reporter(), BnfReporter::ErrorType_Error);
+      report.text()
+        << "Skipping invalid operator line.";
       continue;
     }
     pattern = (*oper).substr(0, position);
@@ -1002,9 +1015,11 @@ void AnyBnfLoad::to_bnf(void)
     {
       if(m > n)
       {
-        logTrace(LOG_WARNING, "Warning: interval " << m << " - " << n << " is empty.");
-        logTrace(LOG_WARNING, line);
+        BnfReport report(m_interface->get_reporter(), BnfReporter::ErrorType_Warning);
+        report.text()
+          << "Interval " << m << " - " << n << " is empty.";
       }
+
       stream_helper << '\036' << m_nonterm_count++ << '\037';
       new_name = stream_helper.str();
       fixed_range.Replace(' ' + new_name, &line);
@@ -1254,10 +1269,30 @@ void AnyBnfLoad::remove_unreachable (void)
   for(std::list<dependency>::iterator pos = m_dependencies.begin();
     pos != m_dependencies.end(); pos++)
   {
-    if(m_grammars.find(pos->dest_grammar) == m_grammars.end())
+    GrammarMap::const_iterator degpos = m_grammars.find(pos->dest_grammar);
+    if(degpos == m_grammars.end())
     {
-      std::cerr << "Warning: grammar file " << pos->dest_grammar << " referenced from " 
-                << pos->source_grammar << " not loaded." << std::endl;
+      BnfReport report(m_interface->get_reporter(), BnfReporter::ErrorType_Warning);
+      report.text()
+        << "Grammar file " << pos->dest_grammar << " referenced from " 
+        << pos->source_grammar << " not loaded.";
+    }
+
+    if(pos->dest_nonterm.empty())
+    {
+      // import all referenced symbols
+      for(GrammarInfo::NontermMap::const_iterator denpos = degpos->second.m_nonterm_names.begin();
+        denpos != degpos->second.m_nonterm_names.end(); denpos++)
+      {
+        // check if the destination nonterminal is referenced in the source grammar
+        int sonid = get_nonterm_id(pos->source_grammar, denpos->first);
+        if(sonid != -1)
+        {
+          right_side.push_back((int)denpos->second);
+          m_global_table.insert(std::make_pair(sonid, right_side));
+          right_side.clear();
+        }
+      }
     }
     else
     {
@@ -1266,13 +1301,17 @@ void AnyBnfLoad::remove_unreachable (void)
 
       if(pos->source_num == -1)
       {
-        std::cerr << "Warning: referenced nonterminal " << pos->source_nonterm << " not present in " 
-                  << pos->source_grammar << "." << std::endl;
+        BnfReport report(m_interface->get_reporter(), BnfReporter::ErrorType_Warning);
+        report.text()
+          << "Referenced nonterminal " << pos->source_nonterm << " not present in " 
+          << pos->source_grammar << ".";
       }
       else if(pos->dest_num == -1)
       {
-        std::cerr << "Warning: referenced nonterminal " << pos->dest_nonterm << " not present in " 
-                  << pos->dest_grammar << "." << std::endl;
+        BnfReport report(m_interface->get_reporter(), BnfReporter::ErrorType_Warning);
+        report.text()
+          << "Referenced nonterminal " << pos->dest_nonterm << " not present in " 
+          << pos->dest_grammar << ".";
       }
       else
       {
@@ -1351,8 +1390,10 @@ void AnyBnfLoad::remove_unreachable (void)
       range_iter=m_global_table.equal_range(INT_MAX - i);
       if(range_iter.first == range_iter.second && !nonterm_present)
       {
-        std::cerr << "Warning: nonterminal " << m_names[i].m_name << " is not defined in "
-                  << m_names[i].m_grammar->first << "." << std::endl;
+        BnfReport report(m_interface->get_reporter(), BnfReporter::ErrorType_Warning);
+        report.text()
+          << "Nonterminal " << m_names[i].m_name << " is not defined in "
+          << m_names[i].m_grammar->first << ".";
       }
       else if(logIsEnabledFor(LOG_DEBUG))
         for (CIT rip=range_iter.first; rip!=range_iter.second; ++rip)
@@ -1428,7 +1469,7 @@ void AnyBnfLoad::add_grammar(const char *grammar_name, const char *syntax_name)
     m_grammar.swap();
 
     if(syntax_name_s.empty())
-      throw std::runtime_error("Syntax specification has unknown syntax");
+      throw std::runtime_error("Syntax specification has no !syntax tag");
   }
 
   std::string syntax_filename = "syntax/" + syntax_name_s + ".conf";

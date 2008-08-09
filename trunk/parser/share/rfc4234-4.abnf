@@ -10,6 +10,7 @@
 ; 4. ABNF DEFINITION OF ABNF
 
 ; !syntax("abnf")
+; !import("ALPHA", "BIT", "CRLF", "DIGIT", "DQUOTE", "HEXDIG", "VCHAR", "WSP", "rfc4234-B.1.abnf")
 
          rulelist       =  1*( rule / (*c-wsp c-nl) )
 

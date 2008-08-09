@@ -39,6 +39,8 @@
 #include "AnyBnfFile.h"
 #include "AnyBnfConf.h"
 
+class BnfParser2;
+
 //!  This is the main grammar-file-loading class.
 /*  First it loads the grammar and configuration file.
  *  Then it performs the preprocessing steps.
@@ -47,6 +49,7 @@
 class AnyBnfLoad
 {
 private:
+  BnfParser2 *m_interface;
   AnyBnfFile m_grammar;             //!<for manipulation with input file
   AnyBnfConf m_config;              //!<for manipulation with configuration file
 
@@ -296,8 +299,8 @@ public:
   }
 
   //!Constructor takes the verbose level.
-  AnyBnfLoad()
-  : m_start_set(false), m_nonterm_count(2)
+  AnyBnfLoad(BnfParser2 *interface)
+  : m_interface(interface), m_grammar(interface), m_start_set(false), m_nonterm_count(2)
   {}
 
 };

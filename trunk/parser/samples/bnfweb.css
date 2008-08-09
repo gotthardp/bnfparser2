@@ -3,7 +3,8 @@ h1 { font-size:large; }
 
 table.query { white-space:nowrap; }
 tr.grammar:hover { background-color:#eeeeee; }
-dt { font-weight: bold; }
+dl{ margin-top: 0.0em; }
+dt { margin-top: 0.25em; font-weight: bold; }
 
 table.sample { background-color:#eeeeee; }
 span.marker { font-size:1.25em; color:red; font-weight: bold; }

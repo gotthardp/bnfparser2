@@ -1,3 +1,17 @@
+2008-08-09  Petr Gotthard  <petr.gotthard@centrum.cz>
+    * Request #2041666: The !import tag allow import all nonterminals
+    * Request #2041698: bnfcheck displays warnings
+    * Request #2042924: bnfcheck references the predefined syntax specifications
+    * Request #2043022: bnfcheck supports uploading several grammar files
+    * Request #2043038: bnfcheck supports uploading several syntax specifications
+    * Request #2043044: bnfcheck terminology alignment
+    * Portability to x86 platforms
+    * Case-sensitivity problems fixed
+
+2007-11-15  Petr Gotthard  <petr.gotthard@centrum.cz>
+    * Reduced debugging output
+    * AnyBnfConf rewritten without magic constants
+
 2007-10-25  Petr Gotthard  <petr.gotthard@siemens.com>
     * moved bnfcheck to samples
     * Request #1818346: added web-based interface (bnfweb.cgi)

@@ -26,6 +26,7 @@
 #include <map>
 #include <vector>
 
+#include "BnfParser2.h"
 #include "AnyBnfLoad.h"
 #include "GSS.h"
 #include "LalrTable.h"
@@ -125,8 +126,8 @@ public:
     process_grammar(m_grammar.get_grammar(), m_grammar.get_nonterm_count());
   }
 
-  Parser()
-  : m_grammar()
+  Parser(BnfParser2 *interface)
+  : m_interface(interface), m_grammar(interface)
   {}
 
   //! Returns the result of the last parsing.
@@ -152,6 +153,8 @@ public:
   }
 
 private:
+  BnfParser2 *m_interface;
+
   //! Stores the result of the last parsing. 
    bool m_last_accepted;
 

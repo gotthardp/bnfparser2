@@ -10,6 +10,7 @@
 ; 4. ABNF DEFINITION OF ABNF
 
 ; !syntax("abnf")
+; !import("ALPHA", "BIT", "CRLF", "DIGIT", "DQUOTE", "HEXDIG", "VCHAR", "WSP", "rfc2234-6.1.abnf")
 
         rulelist       =  1*( rule / (*c-wsp c-nl) )
 
@@ -50,7 +51,7 @@
 
         char-val       =  DQUOTE *(%x20-21 / %x23-7E) DQUOTE
                                ; quoted string of SP and VCHAR
-                                  without DQUOTE
+                               ;  without DQUOTE
 
         num-val        =  "%" (bin-val / dec-val / hex-val)
 
@@ -67,9 +68,9 @@
 
         prose-val      =  "<" *(%x20-3D / %x3F-7E) ">"
                                ; bracketed string of SP and VCHAR
-                                  without angles
+                               ;  without angles
                                ; prose description, to be used as
-                                  last resort
+                               ;  last resort
 
 ; 10. Full Copyright Statement
 ;
