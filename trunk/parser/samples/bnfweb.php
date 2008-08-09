@@ -195,8 +195,10 @@ If you need more, please,
 <a href="mailto:bnfparser2-users@lists.sourceforge.net">tell us</a>.
 </dd>
 <dt>; !import("ALPHA", "CHAR", "DIGIT", "rfc2234-6.1.abnf")</dt>
-<dd>Lists symbol(s) defined in another specification. Syntax specifications
+<dd>Imports symbol(s) defined in another specification. Syntax specifications
 uploaded via this form may only reference the .abnf specifications listed above.</dd>
+<dt>; !import("rfc2234-6.1.abnf")</dt>
+<dd>Imports all symbols defined in a given specification.</dd>
 </dl>
 </p>
 
