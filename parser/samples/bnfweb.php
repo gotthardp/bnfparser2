@@ -27,7 +27,7 @@ if the text conforms to the syntax specification(s) given.<br/>
 <td nowrap>
 <b>Domain Names - Implementation And Specification</b><br/>
 Preferred name syntax<br/>
-rfc1035-2.3.abnf
+<a href="share/rfc1035-2.3.abnf" target="_blank">rfc1035-2.3.abnf</a><br/>
 </td>
 </tr>
 
@@ -36,7 +36,7 @@ rfc1035-2.3.abnf
 <td nowrap>
 <b>Augmented BNF for Syntax Specifications: ABNF</b><br/>
 ABNF Definition of ABNF<br/>
-rfc2234-4.abnf<br/>
+<a href="share/rfc2234-4.abnf" target="_blank">rfc2234-4.abnf</a><br/>
 </td>
 </tr>
 
@@ -45,7 +45,7 @@ rfc2234-4.abnf<br/>
 <td nowrap>
 <b>Augmented BNF for Syntax Specifications: ABNF</b><br/>
 Core Rules<br/>
-rfc2234-6.1.abnf<br/>
+<a href="share/rfc2234-6.1.abnf" target="_blank">rfc2234-6.1.abnf</a><br/>
 </td>
 </tr>
 
@@ -54,7 +54,7 @@ rfc2234-6.1.abnf<br/>
 <td nowrap>
 <b>URLs for Telephone Calls</b><br/>
 "tel" URL scheme<br/>
-rfc2806-2.abnf<br/>
+<a href="share/rfc2806-2.abnf" target="_blank">rfc2806-2.abnf</a><br/>
 </td>
 </tr>
 
@@ -63,7 +63,7 @@ rfc2806-2.abnf<br/>
 <td nowrap>
 <b>SIP: Session Initiation Protocol</b><br/>
 Augmented BNF for the SIP Protocol<br/>
-rfc3261-25.abnf<br/>
+<a href="share/rfc3261-25.abnf" target="_blank">rfc3261-25.abnf</a><br/>
 </td>
 </tr>
 
@@ -72,7 +72,7 @@ rfc3261-25.abnf<br/>
 <td nowrap>
 <b>Augmented BNF for Syntax Specifications: ABNF</b><br/>
 ABNF Definition of ABNF<br/>
-rfc4234-4.abnf<br/>
+<a href="share/rfc4234-4.abnf" target="_blank">rfc4234-4.abnf</a><br/>
 </td>
 </tr>
 
@@ -81,12 +81,25 @@ rfc4234-4.abnf<br/>
 <td nowrap>
 <b>Augmented BNF for Syntax Specifications: ABNF</b><br/>
 Core Rules<br/>
-rfc4234-B.1.abnf<br/>
+<a href="share/rfc4234-B.1.abnf" target="_blank">rfc4234-B.1.abnf</a><br/>
 </td>
 </tr>
 
 <tr><td colspan="2"><a href="#syntax-file">and</a><br/>
-<input type="file" name="syntax-file" style="width:100%"/>
+<?php
+$count =  min(max(1,$_GET["sf"]),100);
+for($i = 0; $i < $count; $i++)
+  echo '<input type="file" name="syntax-file', $i, '" style="width:100%"/><br/>';
+
+if($count < 100)
+  echo '<a href="bnfweb.php?sf=', $count+1, '&tf=', $_GET["tf"], '">(+)</a>';
+else
+  echo '(+)';
+if($count > 1)
+  echo '<a href="bnfweb.php?sf=', $count-1, '&tf=', $_GET["tf"], '">(&ndash;)</a>';
+else
+  echo '(&ndash;)';
+?>
 </td></tr>
 </table>
 
@@ -114,7 +127,20 @@ rfc4234-B.1.abnf<br/>
 
 <tr><td>
 or<br/>
-<input type="file" name="input-file" style="width:100%"/>
+<?php
+$count = min(max(1,$_GET["tf"]),100);
+for($i = 0; $i < $count; $i++)
+  echo '<input type="file" name="input-file', $i, '" style="width:100%"/><br/>';
+
+if($count < 100)
+  echo '<a href="bnfweb.php?sf=', $_GET["sf"], '&tf=', $count+1, '">(+)</a>';
+else
+  echo '(+)';
+if($count > 1)
+  echo '<a href="bnfweb.php?sf=', $_GET["sf"], '&tf=', $count-1, '">(&ndash;)</a>';
+else
+  echo '(&ndash;)';
+?>
 </td></tr>
 
 </table>
@@ -138,8 +164,8 @@ removed immediately after the completing the verification report.</p>
 <dt><a name="syntax">Syntax specification to use</a></dt>
 <dd>Select what specifications the text has to conform, and/or upload a
 <a href="#syntax-file">custom syntax specification.</a>
-The pre-defined specifications have been copy-pasted from RFC documents and
-other standards.</dd>
+(A file describing the BNF grammar.) The pre-defined specifications have been
+copy-pasted from RFC documents and other standards.</dd>
 <dt><a name="symbol">Symbol to use</a></dt>
 <dd>Define what symbol will be checked. The symbol must be defined in one of
 the selected syntax specifications.
@@ -147,22 +173,27 @@ If you double-click some syntax specification, this field will be completed
 with a main symbol from the respective specification.</dd>
 <dt><a name="text">Text to verify</a></dt>
 <dd>Define what text should be checked for compliance to selected syntax
-specifcations.</dd>
+specifications.</dd>
 </dl>
 
 <p>
-<b><a name="syntax-file">Custom syntax specification</a></b> may use
-ABNF variant defined in RFC 2234/4234 (variant "abnf"), or
-ABNF variant used in RFC 1035 (variant "abnf-rfc1035"). If you need more,
-please, <a href="mailto:bnfparser2-users@lists.sourceforge.net">tell us</a>.<br/>
-The specification may contain line comments with the following tags
+The <b><a name="syntax-file">custom syntax specification</a></b> may may contain
+line comments with the following tags
 (see <a href="http://bnfparser2.sourceforge.net" target="_blank">BNF Parser&sup2;</a>
 documentation for more defails):
 <dl>
 <dt>; !syntax("abnf")</dt>
-<dd>Indicates BNF variant used in the specification. Syntax specifications
-uploaded via this form <b>must</b> include a single !syntax tag.
-The value may be "abnf" or "abnf-rfc1035".</dd>
+<dd>Indicates BNF variant used in the specification. (A file describing a syntax
+of the BNF grammar.) Syntax specifications uploaded via this form <b>must</b>
+include a single !syntax tag.<br/>
+The value may be "abnf" or "abnf-rfc1035". This refers to the ABNF variant
+defined in RFC 2234/4234
+(file <a href="share/syntax/abnf.conf" target="_blank">abnf.conf</a>), or
+the ABNF variant used in RFC 1035
+(file <a href="share/syntax/abnf-rfc1035.conf" target="_blank">abnf-rfc1035.conf</a>).
+If you need more, please,
+<a href="mailto:bnfparser2-users@lists.sourceforge.net">tell us</a>.
+</dd>
 <dt>; !import("ALPHA", "CHAR", "DIGIT", "rfc2234-6.1.abnf")</dt>
 <dd>Lists symbol(s) defined in another specification. Syntax specifications
 uploaded via this form may only reference the .abnf specifications listed above.</dd>

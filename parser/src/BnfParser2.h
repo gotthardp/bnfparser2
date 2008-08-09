@@ -22,8 +22,6 @@
 
 #include <string>
 
-class Parser;
-
 #ifndef BNFPARSER2_EXP_DEFN
 #ifdef _WIN32
 #define BNFPARSER2_EXP_DEFN __declspec(dllimport)
@@ -31,6 +29,10 @@ class Parser;
 #define BNFPARSER2_EXP_DEFN /* empty */
 #endif
 #endif
+
+#include "BnfReporter.h"
+
+class Parser;
 
 //! Generic BNF-adaptable parser.
 /**
@@ -50,6 +52,7 @@ class BNFPARSER2_EXP_DEFN BnfParser2
 {
   //! The class containing the implementation of the parser
   Parser *m_core_parser;
+  BnfReporter *m_reporter;
 
 public:
   //! A constructor.
@@ -101,6 +104,14 @@ public:
 
   //! Process the specifications and build the parser.
   void build_parser(void);
+
+  //! Set the reporter to report non-fatal errors
+  void set_reporter(BnfReporter *reporter)
+  { m_reporter = reporter; }
+
+  //! Get the reporter to report non-fatal errors
+  BnfReporter *get_reporter(void) const
+  { return m_reporter; }
 
   //! Get a current verbose level.
   /**

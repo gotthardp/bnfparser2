@@ -17,11 +17,6 @@
  * $Id$
  */
 
-/*
- *  TODO - better exceptions??
- *  
- * 
- */
 #ifndef _ANYBNFFILE_
 #define _ANYBNFFILE_
 
@@ -34,6 +29,8 @@
 #endif
 #include "config.h"
 
+class BnfParser2;
+
 //!  It's used for iterative text-file editing.
 /*  That means reading a line and inserting a set of lines
  *  in place of the read line. When entire file is processed,
@@ -45,6 +42,8 @@
 class AnyBnfFile
 {
 private:
+  BnfParser2 *m_interface;
+
   std::fstream m_input;       //!<input file controller
   std::fstream m_output;      //!<output file controller
   static const int m_max_line_length = 4096;   //!<max input-file line length
@@ -62,6 +61,13 @@ private:
   bool m_temp2_created; //!<True if the first temporary file has been created
 
 public:
+
+  //! Constructor with no parameters
+  AnyBnfFile(BnfParser2 *interface);
+
+  //! Destructor
+  ~AnyBnfFile();
+
   //! prepares the specified file specified for using
   /** Actually it copies its contents to a temp file and
    *  then opens the temp for reading. It also opens another
@@ -107,50 +113,6 @@ public:
    *  side effects - closes all the files used
    */
   void write_back(void);
-
-  //!constructor with no parameters
-  AnyBnfFile(void):m_rw_state(false),m_first_entry(true),m_file_loaded(false),
-  m_temp1_created(false), m_temp2_created(false)
-  {
-    const char *tmpdir_s;
-    if((tmpdir_s = getenv("TMPDIR")) == NULL &&
-      (tmpdir_s = getenv("TMP")) == NULL &&
-      (tmpdir_s = getenv("TEMP")) == NULL)
-#ifdef _WIN32
-      tmpdir_s = ".";
-#else
-      tmpdir_s = "/tmp";
-#endif
-    strncpy(m_temp1, tmpdir_s, sizeof(m_temp1)-1);
-    strncpy(m_temp2, tmpdir_s, sizeof(m_temp2)-1);
-    strncat(m_temp1, "/parser_XXXXXX", sizeof(m_temp1)-strlen(m_temp1)-1);
-    strncat(m_temp2, "/parser_XXXXXX", sizeof(m_temp2)-strlen(m_temp2)-1);
-#if !defined(_WIN32) && defined(HAVE_MKSTEMP)
-    int fd = -1;
-    // create and close temporary files
-    if(((fd = mkstemp(m_temp1)) == -1 || close(fd) != 0) ||
-      ((fd = mkstemp(m_temp2)) == -1 || close(fd) != 0))
-#else
-    // create temporary files
-    if(mktemp(m_temp1) == NULL || mktemp(m_temp2) == NULL)
-#endif
-    {
-      std::cerr << "Cannot create " << m_temp1 << " and " << m_temp2 << std::endl;
-      throw std::runtime_error("Temporary files cannot be created");
-    }
-  }
-  ~AnyBnfFile()
-  {
-    if(m_file_loaded)
-    {
-      m_input.close();
-      m_output.close();
-    }
-    if(m_temp1_created)
-      remove(m_temp1);
-    if(m_temp2_created)
-      remove(m_temp2);
-  }
 };
 
 #endif  //_ANYBNFFILE_

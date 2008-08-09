@@ -25,10 +25,36 @@
 #include "BnfParser2.h"
 #include "config.h"
 
+class LocalReporter : public BnfReporter
+{
+public:
+  virtual void on_error(BnfReporter::ErrorTypes code, const std::string& text)
+  {
+    switch(code)
+    {
+      case BnfReporter::ErrorType_Fatal:
+        std::cerr << "Fatal Error: ";
+        break;
+      case BnfReporter::ErrorType_Error:
+      default:
+        std::cerr << "Error: ";
+        break;
+      case BnfReporter::ErrorType_Warning:
+        std::cerr << "Warning: ";
+        break;
+    }
+
+    std::cerr << text << std::endl;
+  }
+};
+
 int main(int argc, char  *argv[])
 {
   // instantiate the parser
   BnfParser2 test;
+  // instantiate the reporter
+  LocalReporter reporter;
+  test.set_reporter(&reporter);
 
   int delimiter = '\n';
   bool automatic_includes = true;
@@ -178,7 +204,7 @@ int main(int argc, char  *argv[])
    * [test number] passed
    * [test number] failed at position [position]
    */
-  for(int caseno=1; !feof(stdin); caseno++)
+  for(int caseno=1; !feof(stdin) && !ferror(stdin); caseno++)
   {
     std::string word;
     // read new word
