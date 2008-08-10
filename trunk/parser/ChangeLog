@@ -1,10 +1,11 @@
 2008-08-09  Petr Gotthard  <petr.gotthard@centrum.cz>
+    * Request #2044216: Warnings when !import or !syntax tag is erroneous
     * Request #2041666: The !import tag allow import all nonterminals
-    * Request #2041698: bnfcheck displays warnings
-    * Request #2042924: bnfcheck references the predefined syntax specifications
-    * Request #2043022: bnfcheck supports uploading several grammar files
-    * Request #2043038: bnfcheck supports uploading several syntax specifications
-    * Request #2043044: bnfcheck terminology alignment
+    * Request #2041698: bnfweb displays warnings
+    * Request #2042924: bnfweb references the predefined syntax specifications
+    * Request #2043022: bnfweb supports uploading several grammar files
+    * Request #2043038: bnfweb supports uploading several syntax specifications
+    * Request #2043044: bnfweb terminology alignment
     * Portability to x86 platforms
     * Case-sensitivity problems fixed
 
