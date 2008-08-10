@@ -36,7 +36,7 @@ std::string AnyBnfLoad::get_syntax(void)
   {
     line = m_grammar.get_line();
 
-    if(!syntax_found && line.find_first_of("!syntax") != std::string::npos)
+    if(!syntax_found && line.find("!syntax") != std::string::npos)
     {
       if(re_syntax.PartialMatch(line, &syntax))
         syntax_found = true;
@@ -222,7 +222,7 @@ void AnyBnfLoad::process_line_comment(const std::string& line, int position)
   m_grammar.insert_line(line.substr(0,position));
 
   std::string ignored; // this parameter is not used (for now)
-  if(comment.find_first_of("!import") != std::string::npos)
+  if(comment.find("!import") != std::string::npos)
   {
     if(!re_dep.PartialMatch(comment,
       &help_string, &ignored, &(curr_dep.dest_grammar)))
