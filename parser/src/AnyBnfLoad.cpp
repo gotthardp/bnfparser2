@@ -36,8 +36,17 @@ std::string AnyBnfLoad::get_syntax(void)
   {
     line = m_grammar.get_line();
 
-    if(!syntax_found && re_syntax.PartialMatch(line, &syntax))
-      syntax_found = true;
+    if(!syntax_found && line.find_first_of("!syntax") != std::string::npos)
+    {
+      if(re_syntax.PartialMatch(line, &syntax))
+        syntax_found = true;
+      else
+      {
+        BnfReport report(m_interface->get_reporter(), BnfReporter::ErrorType_Warning);
+        report.text()
+          << "Unrecognized !syntax tag.";
+      }
+    }
 
     m_grammar.insert_line(line);
   }
@@ -213,8 +222,18 @@ void AnyBnfLoad::process_line_comment(const std::string& line, int position)
   m_grammar.insert_line(line.substr(0,position));
 
   std::string ignored; // this parameter is not used (for now)
-  if(re_dep.PartialMatch(comment, &help_string, &ignored, &(curr_dep.dest_grammar)))
+  if(comment.find_first_of("!import") != std::string::npos)
   {
+    if(!re_dep.PartialMatch(comment,
+      &help_string, &ignored, &(curr_dep.dest_grammar)))
+    {
+      BnfReport report(m_interface->get_reporter(), BnfReporter::ErrorType_Warning);
+      report.text()
+        << "Unrecognized !import tag.";
+
+      return;
+    }
+
     curr_dep.source_grammar = m_current_grammar->first;
 
     if(help_string.empty())
@@ -226,7 +245,8 @@ void AnyBnfLoad::process_line_comment(const std::string& line, int position)
       return;
     }
 
-    while(re_nonterm.PartialMatch(help_string, &(curr_dep.dest_nonterm), &(curr_dep.source_nonterm)))
+    while(re_nonterm.PartialMatch(help_string,
+      &(curr_dep.dest_nonterm), &(curr_dep.source_nonterm)))
     {
       re_nonterm.Replace("", &help_string);
 
