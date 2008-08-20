@@ -1,3 +1,7 @@
+<?php
+Header('Cache-Control: max-age=7200');
+Header('Expires: '.gmdate("D, d M Y H:i:s", time() + 7200).' GMT');
+?>
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
 <html>
 <head>
