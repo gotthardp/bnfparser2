@@ -56,9 +56,6 @@ private:
   bool m_first_entry;     
   std::string m_filename; //!<name of the source file
   bool m_file_loaded;     //!<true if a file is loaded
-  
-  bool m_temp1_created; //!<True if the first temporary file has been created
-  bool m_temp2_created; //!<True if the first temporary file has been created
 
 public:
 
