@@ -28,8 +28,6 @@ AnyBnfFile::AnyBnfFile(BnfParser2 *interface)
   m_rw_state = false;
   m_first_entry = true;
   m_file_loaded = false;
-  m_temp1_created = false;
-  m_temp2_created = false;
 
   const char *tmpdir_s;
   if((tmpdir_s = getenv("TMPDIR")) == NULL &&
@@ -68,10 +66,9 @@ AnyBnfFile::~AnyBnfFile()
     m_input.close();
     m_output.close();
   }
-  if(m_temp1_created)
-    remove(m_temp1);
-  if(m_temp2_created)
-    remove(m_temp2);
+
+  remove(m_temp1);
+  remove(m_temp2);
 }
 
 void AnyBnfFile::load_file(const std::string& name)
@@ -97,8 +94,6 @@ void AnyBnfFile::load_file(const std::string& name)
   if(!m_output)
     throw std::runtime_error("Temporary file not created");
   
-  m_temp1_created = true;
-  
   m_output << m_input.rdbuf();    //copies entire file into temp1
   
   m_input.close();
@@ -112,8 +107,6 @@ void AnyBnfFile::load_file(const std::string& name)
   if(!m_output)
     throw std::runtime_error("Temporary file not created");
   
-  m_temp2_created = true;
-
   m_filename = name;
   m_file_loaded = true;
 
