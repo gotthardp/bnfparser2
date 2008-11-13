@@ -1,9 +1,12 @@
 body { font-family:Arial, Geneva, Helvetica; font-size:0.75em; }
 h1 { font-size:large; }
 
+p.query { margin-bottom: 1em; }
+p.error { margin-top: 0.0em; margin-bottom: 0.25em; }
+
 table.query { white-space:nowrap; }
 tr.grammar:hover { background-color:#eeeeee; }
-dl{ margin-top: 0.0em; }
+dl { margin-top: 0.0em; }
 dt { margin-top: 0.25em; font-weight: bold; }
 
 table.sample { background-color:#eeeeee; }

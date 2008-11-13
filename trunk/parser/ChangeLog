@@ -1,3 +1,6 @@
+2008-11-13  Petr Gotthard  <petr.gotthard@centrum.cz>
+    * bnfweb: Added support for a 'syntax-text' field.
+
 2008-08-09  Petr Gotthard  <petr.gotthard@centrum.cz>
     * Request #2044216: Warnings when !import or !syntax tag is erroneous
     * Request #2041666: The !import tag allow import all nonterminals

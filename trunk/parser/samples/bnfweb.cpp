@@ -107,6 +107,33 @@ public:
   }
 };
 
+static std::string getTempName()
+{
+  const char *tmpdir_s;
+  if((tmpdir_s = getenv("TMPDIR")) == NULL &&
+    (tmpdir_s = getenv("TMP")) == NULL &&
+    (tmpdir_s = getenv("TEMP")) == NULL)
+#ifdef _WIN32
+    tmpdir_s = ".";
+#else
+    tmpdir_s = "/tmp";
+#endif
+  char tmpname[128];
+  strncpy(tmpname, tmpdir_s, sizeof(tmpname)-1);
+  strncat(tmpname, "/bnfweb_XXXXXX", sizeof(tmpname)-strlen(tmpname)-1);
+#if !defined(_WIN32) && defined(HAVE_MKSTEMP)
+  int fd = -1;
+  // create and close the temporary file
+  if((fd = mkstemp(tmpname)) == -1 || close(fd) != 0)
+#else
+  // create temporary the file
+  if(mktemp(tmpname) == NULL)
+#endif
+    throw std::runtime_error("Internal error: Cannot create the temporary file");
+
+  return tmpname;
+}
+
 int main(int argc, char  *argv[])
 {
   cgicc::Cgicc cgi;
@@ -153,11 +180,17 @@ int main(int argc, char  *argv[])
         syntax_files.push_back(pos);
     }
 
+    std::string syntax_text;
+    // get the input text
+    cgicc::const_form_iterator __syntax_text = cgi.getElement("syntax-text");
+    if(__syntax_text != cgi.getElements().end())
+        syntax_text = __syntax_text->getValue();
+
     std::vector<cgicc::FormEntry> syntax_list;
     if(!cgi.getElement("syntax", syntax_list))
     {
       // no checkboxes selected, check for uploaded file
-      if(syntax_files.empty())
+      if(syntax_files.empty() && syntax_text.empty())
         throw std::runtime_error("No syntax to check");
     }
 
@@ -175,46 +208,50 @@ int main(int argc, char  *argv[])
       pos != syntax_files.end(); pos++)
     {
       std::cout << " upload:" << sstring((*pos)->getFilename());
-      const char *tmpdir_s;
-      if((tmpdir_s = getenv("TMPDIR")) == NULL &&
-        (tmpdir_s = getenv("TMP")) == NULL &&
-        (tmpdir_s = getenv("TEMP")) == NULL)
-#ifdef _WIN32
-        tmpdir_s = ".";
-#else
-        tmpdir_s = "/tmp";
-#endif
-      char tmpname[128];
-      strncpy(tmpname, tmpdir_s, sizeof(tmpname)-1);
-      strncat(tmpname, "/bnfweb_XXXXXX", sizeof(tmpname)-strlen(tmpname)-1);
-#if !defined(_WIN32) && defined(HAVE_MKSTEMP)
-      int fd = -1;
-      // create and close the temporary file
-      if((fd = mkstemp(tmpname)) == -1 || close(fd) != 0)
-#else
-      // create temporary the file
-      if(mktemp(tmpname) == NULL)
-#endif
-        throw std::runtime_error("Internal error: Cannot create the temporary file");
+      std::string tmpname = getTempName();
 
       try
       {
-        std::ofstream tmpfile(tmpname, std::ios::out | std::ios::trunc);
+        std::ofstream tmpfile(tmpname.c_str(), std::ios::out | std::ios::trunc);
         (*pos)->writeToStream(tmpfile);
         tmpfile.close();
 
-        test.add_grammar(tmpname);
+        test.add_grammar(tmpname.c_str());
         // keep privacy of the users: make sure the temporary files are deleted
-        remove(tmpname);
+        remove(tmpname.c_str());
       }
       catch(...)
       {
-        remove(tmpname);
+        remove(tmpname.c_str());
         throw;
       }
     }
 
-    std::cout << "<br/></p>" << std::endl;
+    std::cout << "<br/>" << std::endl;
+
+    if(!syntax_text.empty())
+    {
+      std::cout << "grammar:<br/>" << sstring(syntax_text);
+      std::string tmpname = getTempName();
+
+      try
+      {
+        std::ofstream tmpfile(tmpname.c_str(), std::ios::out | std::ios::trunc);
+        tmpfile << syntax_text;
+        tmpfile.close();
+
+        test.add_grammar(tmpname.c_str());
+        // keep privacy of the users: make sure the temporary files are deleted
+        remove(tmpname.c_str());
+      }
+      catch(...)
+      {
+        remove(tmpname.c_str());
+        throw;
+      }
+    }
+
+    std::cout << "</p>" << std::endl;
     test.add_referenced_grammars();
     test.build_parser();
 
