@@ -282,7 +282,7 @@ int main(int argc, char  *argv[])
           << "<p class=\"result\">"
           << "Correct.<br/>"
           << "<table class=\"sample\"><tr><td>"
-          << sstring(*pos)
+          << sstring(test.get_semantic_string())
           << "</td></tr></table>"
           << "</p>" << std::endl;
       }
