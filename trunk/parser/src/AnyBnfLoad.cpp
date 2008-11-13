@@ -391,7 +391,7 @@ void AnyBnfLoad::condensate_rules(void)
     if (!re_wsp_def.PartialMatch(next))
     {
       logTrace(LOG_ERR, "unexpected format '" << next << "'");
-      throw std::runtime_error("Condensate error 6");
+      throw std::runtime_error("Preprocessing: condensate error 6");
     }
 
     //paste the two lines together
@@ -485,7 +485,7 @@ void AnyBnfLoad::condensate_rules(void)
   //line ==> rulename has to be the string in 'next'.
         if (!re_rule_wsp.PartialMatch(next))
         {
-          throw std::runtime_error("Condensate error 10");
+          throw std::runtime_error("Preprocessing: condensate error 10");
         }
         m_grammar.insert_line(current);
         next.append(lookout);
@@ -1467,7 +1467,7 @@ void AnyBnfLoad::add_grammar(const char *grammar_name, const char *syntax_name)
     if(stat(grammar_filename.c_str(), &fileinfo) == 0)
       break;
     if(gpos == m_search_paths.end())
-      throw std::runtime_error("File not found");
+      throw std::runtime_error("Grammar file not found");
 
     grammar_filename = *(gpos++) + "/" + grammar_name;
   }
@@ -1504,7 +1504,7 @@ void AnyBnfLoad::add_grammar(const char *grammar_name, const char *syntax_name)
     if(stat(syntax_filename.c_str(), &fileinfo) == 0)
       break;
     if(spos == m_search_paths.end())
-      throw std::runtime_error("File not found");
+      throw std::runtime_error("Syntax specification file not found");
 
     syntax_filename = *(spos++) + "/syntax/" + syntax_name_s + ".conf";
   }
