@@ -1,0 +1,73 @@
+#
+# bnfparser2 - Generic BNF-adaptable parser
+# http://bnfparser2.sourceforge.net
+#
+#	This library is free software; you can redistribute it and/or
+#       modify it under the terms of the GNU Lesser General Public
+#       License version 2.1, as published by the Free Software Foundation.
+#
+#       This library is distributed in the hope that it will be useful,
+#       but WITHOUT ANY WARRANTY; without even the implied warranty of
+#       MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+#       Lesser General Public License for more details.
+#
+# Copyright (c) 2007 ANF DATA spol. s r.o.
+#
+# $Id$
+#
+
+prefix = @prefix@
+exec_prefix = @exec_prefix@
+bindir = @bindir@
+libdir = @libdir@
+includedir = @includedir@
+datarootdir = @datarootdir@
+datadir = @datadir@
+
+CC = @CC@
+CXX = @CXX@
+DEFS = @DEFS@
+CPPFLAGS = -ansi -Wall -I../src -DDATADIR=\"$(datadir)/BnfParser2\" @CPPFLAGS@
+LIBS = -L../src -lBnfParser2 @LIBS@
+
+BNFCHECK_TARGET = ../bnfcheck
+TARGETS = $(BNFCHECK_TARGET) bnfweb.cgi
+
+DEPENDENCY_FILES = *.cpp
+
+all: .depend $(TARGETS)
+
+# note: to simplify profiling (gprof) the test tool should be linked statically
+$(BNFCHECK_TARGET): bnfcheck.o
+	@echo "  LD $(@F)"; \
+	$(CXX) $(LDFLAGS) $^ $(LIBS) -o $@
+
+bnfweb.cgi: bnfweb.o
+	@echo "  LD $(@F)"; \
+	$(CXX) $(LDFLAGS) $^ $(LIBS) -lcgicc -o $@
+
+%.o: %.cpp
+	@echo "  CXX $<"; \
+	$(CXX) -c $(CPPFLAGS) $(DEFS) $< -o $@
+
+clean:
+	-rm -rf .depend *.o $(TARGETS)
+
+distclean: clean
+	-rm -rf Makefile
+
+rebuild: clean all
+
+
+install:
+	mkdir -p $(bindir)
+	cp -pf $(TARGETS) $(bindir)
+
+
+.depend dep: $(DEPENDENCY_FILES)
+	@echo "  DEP $(DEPENDENCY_FILES)"; \
+	$(CXX) -c -MM $(CPPFLAGS) $(DEFS) $(DEPENDENCY_FILES) | grep -v '^#' | grep -v '^$$' > .depend
+
+ifeq (.depend,$(wildcard .depend))
+include .depend
+endif 

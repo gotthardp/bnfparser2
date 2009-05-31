@@ -1,0 +1,314 @@
+." bnfparser2 - Generic BNF-adaptable parser
+." http://bnfparser2.sourceforge.net
+."
+."      This library is free software; you can redistribute it and/or
+."      modify it under the terms of the GNU Lesser General Public
+."      License version 2.1, as published by the Free Software Foundation.
+."
+."      This library is distributed in the hope that it will be useful,
+."      but WITHOUT ANY WARRANTY; without even the implied warranty of
+."      MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+."      Lesser General Public License for more details.
+."
+." Copyright (c) 2007 ANF DATA spol. s r.o.
+."
+." $Id$
+."
+." man -t bnfcheck | ps2pdf14 - bnfcheck.pdf
+." groff -mandoc -Thtml -P -lr bnfcheck.1 > bnfcheck.html
+."
+.TH bnfcheck 1 "October 15, 2007" "version 0.1" "USER COMMANDS"
+.
+.SH NAME
+bnfcheck \- check input against a BNF syntax specification
+.
+.SH SYNOPSIS
+.TP
+\fBbnfcheck\fR
+.br
+[\fB--manual-includes\fR] [\fB\-v\fR \fILEVEL\fR]
+.br
+[\fB\-d\fR \fIDIR\fR] [\fB\-e\fR \fINUM\fR] \fISYMBOL\fR ([\fB:\fR[\fIVARIANT\fR]] \fISYNTAX\fR)...
+.
+.SH DESCRIPTION
+A universal syntax validation utility utilizing a generic BNF-adaptable parser
+(bnfparser2). The parser is generated at run-time depending on given syntax
+specification in a Backus-Naur Form (BNF).
+.br
+The Backus-Naur Form (BNF) is a metasyntax widely used as a notation for the
+grammars of computer programming languages, instruction sets and communication
+protocols. There are many variants and extensions of BNF.
+.br
+The tool reads from the standard input words separated by a given delimiter
+(option \fB\-e\fR) and checks if the syntax conforms to the specification. The
+metasyntax is loaded from one or more \fISYNTAX\fR specifications, each of which
+may use a different \fIVARIANT\fR of BNF.
+.TP
+\fISYMBOL\fR
+Symbol to be checked. (A start nonterminal of the BNF grammar.) Must be defined
+in the first \fISYNTAX\fR specification.
+.TP
+\fB:\fR\fIVARIANT\fR
+Variant of BNF used by next \fISYNTAX\fR specification. (A file describing
+a syntax of the BNF grammar.) When omited, the syntax is determined from the
+\fB!syntax\fR tag.
+.br
+A sole `\fB:\fR' (colon) may be used to indicate that the next \fISYNTAX\fR
+specification uses BNF variant defined by the previous \fB:\fR\fIVARIANT\fR
+parameter.
+.TP
+\fISYNTAX\fR
+Syntax specification. (A file describing the BNF grammar.)
+.
+.SH OPTIONS
+.TP
+\fB\-d\fR \fIDIR\fR
+Add the directory DIR to the list of directories to be searched for syntax
+and BNF variant specifications.
+.TP
+\fB\-e\fR \fINUM\fR, \fB--delimiter=\fR\fINUM\fR
+Set word delimiter to an ASCII character with decimal value \fR\fINUM\fR.
+Default delimiter is LF(10).
+.TP
+\fB--manual-includes\fR
+Do not automatically load grammars referenced using the \fB!include\fR tag.
+.TP
+\fB\-v\fR \fILEVEL\fR, \fB--verbose=\fR\fILEVEL\fR
+For debugging purposes: set verbosity to a given \fILEVEL\fR. Only messages of
+equal or higher importance will be printed.
+.RS
+.PP
+The following importance levels are defined
+.RS 2
+\fB0\fR system is unusable
+.br
+\fB1\fR action must be taken immediately
+.br
+\fB2\fR critical conditions
+.br
+\fB3\fR error conditions
+.br
+\fB4\fR warning conditions
+.br
+\fB5\fR normal but significant condition (default level)
+.br
+\fB6\fR informational
+.br
+\fB7\fR debug-level messages
+.br
+\fB8\fR function call tracing
+.RE
+.RE
+.TP
+\fB--help\fR
+Display a short help text and exit.
+.
+.SH EXIT STATUS
+Returns the number of input words with syntax errors.
+.
+.SH SYNTAX SPECIFICATION
+When searching for a particular \fISYNTAX\fR specification, the list of
+directories specified using \fB\-d\fR \fIDIR\fR is searched and the
+specification is loaded from `\fIDIR\fR/\fISYNTAX\fR'.
+.PP
+The syntax is specified using a particuar variant of Backus-Naur Form. The
+BNF specification may contain line comments with the following tags:
+.TP
+\fB!syntax(\fR\fIVARIANT\fR\fB)\fR
+indicates BNF variant used in that specification. One syntax specification file
+can use only a single \fB!syntax\fR tag.
+.br
+When omitted, the syntax is determined from the \fB:\fR\fIVARIANT\fR command-line
+parameter.
+.IP
+Examples:
+.br
+; !syntax("abnf")
+.TP
+\fB!import(\fR\fISSYMBOL\fR [\fBas\fR \fIDSYMBOL\fR]\fB,\fR ...\fB,\fR \fISSYNTAX\fR)
+indicates that a symbol (nonterminal) \fISSYMBOL\fR is defined in a specification
+\fISSYNTAX\fR. The current specification may use the name \fIDSYMBOL\fR for it.
+.br
+If \fB--manual-includes\fR is given, all referenced \fISSYNTAX\fR specifications
+must be listed as \fBbnfcheck\fR command-line parameters.
+.br
+Otherwise, all referenced \fISSYNTAX\fR specifications are loaded automatically.
+.IP
+Examples:
+.br
+; !import("ALPHA", "CHAR", "DIGIT", "rfc2234-6.1.abnf")
+.br
+; !import("<domain>" as "domain", "rfc1035-2.3.abnf")
+.TP
+\fB!import(\fR\fISSYNTAX\fR)
+imports all symbols defined in a specification \fISSYNTAX\fR.
+.IP
+Examples:
+.br
+; !import("rfc2234-6.1.abnf")
+.
+.SH VARIANT DEFINITION
+When searching for a particular \fIVARIANT\fR definition, the list of
+directories specified using \fB\-d\fR \fIDIR\fR is searched and the variant
+definition is loaded from `\fIDIR\fR/syntax/\fIVARIANT\fR.conf'.
+.PP
+Syntax of each BNF notation variant (meta-metasyntax) is defined using regular
+expressions \fBpcrepattern\fR(3). The following parameters are used:
+.TP
+\fBrulename=\fR\fIregex\fR
+Notation of rule names (nonterminals).
+.IP
+Example:
+.br
+.I <ip4-address> ::= 3*<digit>, 3*( \(dq.\(dq, 3*<digit> );
+.br
+rulename=<[a-zA-Z][a-zA-Z0-9\-]*>
+.TP
+\fBdefined=\fR\fIregex\fR
+Assignment notation used to define a rule.
+.IP
+Example:
+.br
+.I <ip4-address> ::= 3*<digit>, 3*( \(dq.\(dq, 3*<digit> );
+.br
+defined=::=
+.TP
+\fBterminal=\fR\fIregex\fR
+Notation used for strings (terminals).
+.IP
+Example:
+.br
+.I <ip4-address> ::= 3*<digit>, 3*( \(dq.\(dq, 3*<digit> );
+.br
+terminal="
+.TP
+\fBcomment=\fR\fIregex\fR
+Notation used for line comments.
+.IP
+Example:
+.br
+.I # An IPv4 address in a dot-decimal notation
+.br
+comment=#
+.TP
+\fBconcat=\fR\fIregex\fR
+Notation used to express a concatenation.
+.IP
+Example:
+.br
+.I <ip4-address> ::= 3*<digit>, 3*( \(dq.\(dq, 3*<digit> );
+.br
+concat=,
+.TP
+\fBalternative=\fR\fIregex\fR
+Notation used to express an alternative.
+.br
+Note that special characters like `^.[$()|*+?{\' must be in \fIregex\fR escaped
+by `\\'.
+.IP
+Example:
+.br
+.I <ip-address> ::= <ip4-address> | <ip6-address>
+.br
+alternative=\\|
+.PP
+\fBleftgroup=\fR\fIregex\fR
+.br
+\fBrightgroup=\fR\fIregex\fR
+.RS
+Notation used to open and close a sequence group.
+.PP
+Example:
+.br
+.I <ip4-address> ::= 3*<digit>, 3*( \(dq.\(dq, 3*<digit> );
+.br
+leftgroup=(
+.br
+rightgroup=)
+.RE
+.PP
+\fBleftcomment=\fR\fIregex\fR
+.br
+\fBrightcomment=\fR\fIregex\fR
+.RS
+Notation used to start and close a block of comments.
+.PP
+Example:
+.br
+.I (* An IPv4 address in a dot-decimal notation *)
+.br
+leftcomment=(*
+.br
+rightcomment=*)
+.RE
+.TP
+\fBallbrackets=\fR\fIregex\fR
+List of all brackets that may be used.
+.IP
+Example:
+.br
+allbrackets=()[]{}
+.TP
+\fBcasesensitivestring=\fR\fBtrue\fR | \fBfalse\fR
+Indicates whether strings (terminals) are case-sensitive.
+.TP
+\fBcasesensitiverulename=\fR\fBtrue\fR | \fBfalse\fR
+Indicates whether rule names (nonterminals) are case-sensitive.
+.TP
+\fBOPERATORS\fR
+List of substitutions \fIregex\fR\fB=\fR\fIregex\fR transforming BNF operators
+to ABNF notation defined in RFC 4234.
+.br
+Options and repetitions are transformed to <min>\fB*\fR<max>\fB(\fR...\fB)\fR.
+.IP
+Example:
+.br
+[\\1]=0*1(\\1)
+.br
+{\\1}=*(\\1)
+.
+.SH FILES
+.TP
+\fI/usr/share/BnfParser2/rfc*.abnf\fR
+Syntax specifications (metasyntax) copy-pasted from RFC documents that are
+available at www.ietf.org/rfc.
+.TP
+\fI/usr/share/BnfParser2/syntax/*.conf\fR
+Definitions of BNF variants (meta-metasyntax).
+.
+.SH EXAMPLES
+Start parser for SIP messages according to RFC3261. The messages will
+be read from standard input and delimited by ASCII \\0 (zero).
+.TP
+\fBbnfcheck\fR \fB\-d\fR share \fB\-e\fR 0 sip-message rfc3261-25.abnf
+.TP
+\fBbnfcheck\fR \fB\-d\fR share \fB\-e\fR 0 \fB--manual-includes\fR sip-message \\
+.br
+\fB:\fRabnf rfc3261-25.abnf \fB:\fR rfc2806-2.abnf \fB:\fR rfc2234-6.1.abnf \\
+.br
+\fB:\fRabnf-rfc1035 rfc1035-2.3.abnf
+.
+.SH SEE ALSO
+\fBbnfparser2\fR(3), \fBregex\fR(7), \fBpcrepattern\fR(3)
+.
+.SH REPORTING BUGS
+Report bugs to <bnfparser2-devel@lists.sourceforge.net>.
+.
+.SH CREDITS
+Institute for Theoretical Computer Science (ITI) research center
+.br
+Faculty of Informatics, Masaryk University Brno
+.PP
+ANF DATA spol. s r.o.
+.br
+Siemens IT Solutions and Services, PSE Czech Republic
+.
+.SH COPYRIGHT
+Copyright (c) 2007 ANF DATA spol. s r.o.
+.br
+Copyright (c) 2007 Vaclav Vacek
+.PP
+This is free software. You may redistribute it and/or modify it under the
+terms of the GNU Lesser General Public License version 2.1, as published
+by the Free Software Foundation.
+." End of file

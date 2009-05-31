@@ -1,0 +1,77 @@
+Part A. User Instructions
+=========================
+
+  bnfcheck - Command-line tool for syntax verification.
+    See man bnfcheck(1).
+
+  bnfweb.cgi - Web application for syntax verification.
+
+If you need support, please check http://bnfparser2.sourceforge.net, or
+contact <bnfparser2-users@lists.sourceforge.net>.
+
+
+A.1. Introduction
+-----------------
+
+The latest version can be obtained at
+  http://bnfparser2.sourceforge.net
+
+There are the following mailing lists
+  bnfparser2-users@lists.sourceforge.net
+  bnfparser2-devel@lists.sourceforge.net
+  bnfparser2-commits@lists.sourceforge.net
+
+To subscribe to the lists or to visit the archives, please check
+  http://sourceforge.net/projects/bnfparser2
+
+
+A.2. Build instructions
+-----------------------
+
+1) Install the pcrecpp library (http://www.pcre.org)
+ - follow INSTALL instructions of pcrecpp
+
+2) Install the SimpleOpt library (http://code.jellycan.com/simpleopt)
+ - copy SimpleOpt.h to /usr/include
+
+3) GNU cgicc library (http://www.cgicc.org)
+ - follow INSTALL instructions of cgicc
+
+
+Finally, configure and build the bnfparser2 library by executing
+  autoconf
+  ./configure --prefix=/usr/local
+  gmake
+  gmake install
+
+
+A.2.1. Configuration of bnfcheck
+
+Assuming the software was installed with the /usr/local prefix, the following
+environment variables have to be set
+  PATH=... :/usr/local/bin
+  LD_LIBRARY=... :/usr/local/lib
+  MANPATH=... :/usr/local/share/man
+
+
+A.2.2. Configuration of bnfweb
+
+To run this application you need a web-server, e.g. http://httpd.apache.org/.
+
+Copy bnfweb.html bnfweb.css bnfweb.cgi to some web-server content directory
+under /var/www/html and add "ExecCGI" to its "Options" directive.
+
+Make sure your web-server will find the BnfParser2 library. Preferably the
+library should be installed under /usr/local.
+
+
+Part B. Developer Instructions
+==============================
+
+#include <BnfParser2.h>
+
+If you need support, please check http://bnfparser2.sourceforge.net, or
+contact <bnfparser2-devel@lists.sourceforge.net>.
+
+
+$Id$

@@ -1,0 +1,7 @@
+/*
+ * This grammar defines the language a^nb^n - the case of
+ * the letters is symmetrical
+ */
+S = x
+y = z
+x = %d97 x %d98 / %d65 x %d66 / "" ; epsilon

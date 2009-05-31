@@ -1,0 +1,35 @@
+2008-11-13  Petr Gotthard  <petr.gotthard@centrum.cz>
+    * bnfweb: Added support for a 'syntax-text' field.
+
+2008-08-09  Petr Gotthard  <petr.gotthard@centrum.cz>
+    * Request #2044216: Warnings when !import or !syntax tag is erroneous
+    * Request #2041666: The !import tag allow import all nonterminals
+    * Request #2041698: bnfweb displays warnings
+    * Request #2042924: bnfweb references the predefined syntax specifications
+    * Request #2043022: bnfweb supports uploading several grammar files
+    * Request #2043038: bnfweb supports uploading several syntax specifications
+    * Request #2043044: bnfweb terminology alignment
+    * Portability to x86 platforms
+    * Case-sensitivity problems fixed
+
+2007-11-15  Petr Gotthard  <petr.gotthard@centrum.cz>
+    * Reduced debugging output
+    * AnyBnfConf rewritten without magic constants
+
+2007-10-25  Petr Gotthard  <petr.gotthard@siemens.com>
+    * moved bnfcheck to samples
+    * Request #1818346: added web-based interface (bnfweb.cgi)
+    * updated add_start_symbol to automatically determine start_grammar
+
+2007-10-13  Petr Gotthard  <petr.gotthard@siemens.com>
+    * simplified command-line interface of bnfcheck
+    * added add_search_path() and search path support
+    * added add_referenced_grammars() to automatically resolve references
+    * added !syntax tag
+    * updated add_grammar() to automatically determine BNF variant
+    * updated README and bnfcheck.1
+    * updated debugging and tracing functionality
+    * restructured the share directory
+    * fixed Win32 portability
+
+$Id$

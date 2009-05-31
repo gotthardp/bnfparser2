@@ -1,0 +1,21 @@
+#!/bin/bash
+
+TESTFILE=`mktemp` || exit 1
+# combine test-cases into one file, separated by '\xEE'
+./makewords rfc4475 $TESTFILE
+# execute tests
+OUTFILE=`mktemp` || exit 1
+../bnfcheck -v 6 -e 238 sip-message rfc3261-25.abnf < $TESTFILE | tee $OUTFILE
+# check the output
+diff $OUTFILE rfc4475.xout
+RETCODE=$?
+if [ $RETCODE != 0 ]; then
+  # we got an error, do NOT remove the test file
+  echo "$0: tests failed, see $TESTFILE"
+exit 1
+fi
+
+echo "$0: all tests passed"
+rm -f $TESTFILE $OUTFILE
+
+# end of file

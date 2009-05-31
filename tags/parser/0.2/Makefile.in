@@ -1,0 +1,33 @@
+#
+# bnfparser2 - Generic BNF-adaptable parser
+# http://bnfparser2.sourceforge.net
+#
+#	This library is free software; you can redistribute it and/or
+#       modify it under the terms of the GNU Lesser General Public
+#       License version 2.1, as published by the Free Software Foundation.
+#
+#       This library is distributed in the hope that it will be useful,
+#       but WITHOUT ANY WARRANTY; without even the implied warranty of
+#       MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+#       Lesser General Public License for more details.
+#
+# Copyright (c) 2007 ANF DATA spol. s r.o.
+#
+# $Id$
+#
+
+subdirectories = doc src share samples
+
+all clean distclean install:
+	@for subdir in $(subdirectories); \
+	do \
+	echo "Entering $$subdir"; \
+	cd $$subdir; $(MAKE) --no-print-directory $@ || break; cd ..; \
+	done
+
+distclean: clean _distclean
+
+_distclean:
+	-rm -rf configure Makefile autom4te.cache config.log config.status
+
+rebuild: clean all
