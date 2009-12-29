@@ -19,6 +19,7 @@
  */
 
 #include <iostream>
+#include <string.h>
 
 #include "Debug.h"
 #include "AnyBnfConf.h"

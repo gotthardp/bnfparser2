@@ -19,6 +19,7 @@
  */
 
 #include <iostream>
+#include <limits.h>
 #include <sys/stat.h>
 
 #include "BnfParser2.h"

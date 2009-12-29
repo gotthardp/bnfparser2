@@ -18,6 +18,7 @@
  */
 
 #include <iostream>
+#include <string.h>
 
 #include "BnfParser2.h"
 #include "AnyBnfFile.h"
