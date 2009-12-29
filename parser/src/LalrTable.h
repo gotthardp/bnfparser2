@@ -26,6 +26,8 @@
 #include <stdexcept>
 #include <fstream>
 
+#include <limits.h>
+
 /** \brief This is the main class for building GLALR table.
  *
  *  It takes an augemented grammar and performs various actions.

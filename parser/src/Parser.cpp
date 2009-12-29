@@ -71,6 +71,7 @@ bool Parser::parse_word(const std::string& word)
       reducer(i, a_i_1);
 
     if(i != word.size())
+    {
       if(m_q.empty())
       {
         m_last_accepted = false;
@@ -79,6 +80,7 @@ bool Parser::parse_word(const std::string& word)
       }
       else
         shifter(i, a_i_1, a_i_2);
+    }
   }
 
   accepting_states = m_gss.find_state(word.size(), m_table->get_accepting_state());

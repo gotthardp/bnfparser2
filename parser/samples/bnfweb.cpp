@@ -17,6 +17,7 @@
  */
 
 #include <dirent.h>
+#include <string.h>
 #include <sys/time.h>
 #include <set>
 #include <stdexcept>
