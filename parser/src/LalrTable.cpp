@@ -560,7 +560,7 @@ void LalrTable::compute_lookaheads()
     {
       int symbol;
       int gotoitem_first, gotoitem_second;
-      unsigned goto_index1, goto_index2;
+      unsigned goto_index1, goto_index2=0;
       if(static_cast<int>((m_rules[closure_iter->first.first].second).size()) <= 
           (closure_iter->first.second)) continue;
       //not looking for the rules with the dot on the right end
