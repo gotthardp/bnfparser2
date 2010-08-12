@@ -91,6 +91,11 @@ private:
     {
       semantic_value.insert(val);
     }
+    //! Checks if the semantics is already stored in the symbol node
+    bool has_semantics(const std::string& val)
+    {
+      return semantic_value.count(val) != 0;
+    }
   };
   
   //! Stores all the symbol nodes
@@ -235,6 +240,11 @@ public:
   void add_semantics_to_symbol(const SymbolIdent& symbol, const std::string& value)
   {
     m_symbol_nodes[symbol.id].add_value(value);
+  }
+  //! Checks if the given symbol contains the given semantics
+  bool symbol_has_semantics(const SymbolIdent& symbol, const std::string& value)
+  {
+    return m_symbol_nodes[symbol.id].has_semantics(value);
   }
 
   //! Returns the XML string describing the set of semantic values stored in the specified symbol node

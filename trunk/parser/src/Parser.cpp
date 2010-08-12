@@ -153,7 +153,7 @@ void Parser::shifter(unsigned i, int a_i_plus_1, int a_i_plus_2)
                 if(m_gss.get_state_level(successors_of_symbol[l]) == m_gss.get_state_level(q_iter->state_node))
                 {
                   found_state_node = true;
-                  m_gss.add_successor_to_state(state_with_label[k], symbol_with_label[m]);
+                 // m_gss.add_successor_to_state(state_with_label[k], symbol_with_label[m]);
                   m_gss.add_successor_to_symbol(symbol_with_label[m], q_iter->state_node);
                   m_gss.add_semantics_to_symbol(symbol_with_label[m], helper);
                   temp_symbol = symbol_with_label[m];
@@ -319,8 +319,10 @@ void Parser::reducer(unsigned i, int a_i_plus_1)
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
   
+  bool new_semantics;
   for(k = 0; k < chi.size(); k++)
   {
+    new_semantics = true;
     reduce_string = chi[k].second;
     state_to_go = m_table->get_go_to(m_gss.get_state_label(chi[k].first), 
                                      m_table->get_lhs(now_processed->rule_number) + 256);
@@ -372,7 +374,10 @@ void Parser::reducer(unsigned i, int a_i_plus_1)
         if(m_gss.has_state_successor(symbol_with_label[l], chi[k].first))
         {
           successor_added = true;
-          m_gss.add_semantics_to_symbol(symbol_with_label[l], reduce_string);
+          if(m_gss.symbol_has_semantics(symbol_with_label[l], reduce_string))
+            new_semantics = false;
+          else
+            m_gss.add_semantics_to_symbol(symbol_with_label[l], reduce_string);
           temp_symbol = symbol_with_label[l];
           break;
         }
@@ -398,7 +403,7 @@ void Parser::reducer(unsigned i, int a_i_plus_1)
         m_gss.add_successor_to_symbol(temp_symbol, chi[k].first);
       }
         
-      if(now_processed->reduction_length != 0)
+      if(now_processed->reduction_length != 0 && new_semantics)
         for(actions = m_table->get_actions(state_to_go, -a_i_plus_1).begin();
             actions != m_table->get_actions(state_to_go, -a_i_plus_1).end();
             actions++)
