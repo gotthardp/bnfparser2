@@ -213,7 +213,7 @@ int main(int argc, char  *argv[])
     while((ch = fgetc(stdin)) != EOF && ch != delimiter)
       word += ch;
 
-    std::cerr << "--------------------NEXT WORD--------------------" << std::endl;
+    std::cerr << "---------------RESULT---------------" << std::endl;
     if(test.parse_word(word))
     {
       // print accepted word
@@ -224,11 +224,46 @@ int main(int argc, char  *argv[])
     {
       errcount++;
       // print the word
-      std::cerr <<word << std::endl;
-      for(unsigned j = 0; j < test.get_error_position(); j++)
-        std::cerr << '-';
-      std::cerr  << '^' << std::endl;
+      unsigned j = word.size(), line_chars=0;
+      if(test.get_error_position() >= word.size())
+        std::cerr << word << " <-- Unexpected end of input" << std::endl;
+      else
+      {
+        for(j = 0; j <= test.get_error_position(); j++)
+        {
+          if(word.at(j) == '\n')
+            line_chars = 0;
+          else
+            line_chars++;
+          if(word.at(j) == '\r')
+          {
+            std::cerr << "<CR>";
+            line_chars += 3;
+          }
+          else if(word.at(j) == '\n')
+          {
+            std::cerr << "<LF>";
+            if(j != test.get_error_position())
+              std::cerr << std::endl;
+          }
+          else
+            std::cerr << word.at(j);
+        }
+        std::cerr  << "<-- Erroneous character" << std::endl;
+        for(unsigned k = 0; k < line_chars; k++)
+          std::cerr << ' ';
+        for(/**/;j < word.size(); j++)
+        {
+          if(word.at(j) == '\r')
+            std::cerr << "<CR>";
+          else if(word.at(j) == '\n')
+            std::cerr << "<LF>" << std::endl;
+          else
+           std::cerr << word.at(j);
+        }
+        std::cerr << std::endl;
       // locate the error
+      }
       std::cout << "[" << caseno << "] failed at position " << test.get_error_position() + 1 << std::endl;
     }
   }
